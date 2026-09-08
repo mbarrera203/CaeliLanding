@@ -1,25 +1,28 @@
-export type Category = 'Rings' | 'Necklaces' | 'Bracelets' | 'Earrings';
+export type Category = 'Anillos' | 'Collares' | 'Pulseras' | 'Aretes';
 
 export const CATEGORIES: Category[] = [
-'Rings',
-'Necklaces',
-'Bracelets',
-'Earrings'];
-
+  'Anillos',
+  'Collares',
+  'Pulseras',
+  'Aretes',
+];
 
 export interface Product {
   id: string;
   name: string;
   category: Category;
-  /** Price in USD. */
+  /** Precio en USD. */
   price: number;
-  /** Short material / detail line shown under the product name. */
+  /** Línea corta de material / detalle que se muestra bajo el nombre del producto. */
   detail: string;
-  image: string;
+  /** Descripción más larga del producto, visible al hacer hover en la tarjeta. */
+  description?: string;
+  /** Arreglo de imágenes del producto (mínimo una). */
+  images: string[];
   stock: number;
   active: boolean;
-  /** Marks the piece that leads the catalog. */
+  /** Marca la pieza principal del catálogo. */
   featured?: boolean;
-  /** True for pieces just dropped into the admin upload zone. */
+  /** True para piezas recién subidas desde la zona de carga del admin. */
   isDraft?: boolean;
 }
