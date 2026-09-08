@@ -68,15 +68,15 @@ export function Storefront({ actionStyle }: StorefrontProps) {
                 Joyas para cada momento
               </h1>
               <p className="mt-3 text-[15px] leading-relaxed text-muted sm:text-base">
-                Joyería fina para el día a día, terminada a mano en pequeños lotes.
-                Sin carrito, sin checkout — elige tu pieza y escríbenos directo.
+                Plata 925 y acero quirúrgico seleccionados para acompañarte todos los días.
+                Sin vueltas ni registros — elegí tu pieza favorita y pedila directo por WhatsApp.
               </p>
             </div>
             <div className="shrink-0 text-right">
               <p className="text-[13px] leading-relaxed text-muted">
-                Hecho en México
+                Plata 925 & Acero Quirúrgico
                 <br />
-                Envíos en 3–5 días hábiles
+                Envíos a todo el país 🇦🇷
               </p>
             </div>
           </div>
@@ -132,8 +132,8 @@ export function Storefront({ actionStyle }: StorefrontProps) {
               <a href={whatsappLink('¡Hola Caeli!')} target="_blank" rel="noopener noreferrer" className="text-[14px] font-medium text-gold-dark hover:text-gold transition-colors">
                 {WHATSAPP_DISPLAY}
               </a>
-              <p className="max-w-[200px] text-[12px] leading-relaxed text-muted mt-2 text-center sm:text-left">
-                Joyería artesanal de calidad, terminada con cuidado en México.
+              <p className="max-w-[220px] text-[12px] leading-relaxed text-muted mt-2 text-center sm:text-left">
+                Joyas y accesorios en plata 925 y acero quirúrgico de primera calidad. Envíos a toda la Argentina.
               </p>
             </div>
 
@@ -162,7 +162,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
           <div className="gold-line my-8 opacity-50" />
 
           <p className="text-center text-[12px] text-muted">
-            © {new Date().getFullYear()} Caeli Joyas y Accesorios · Hecho con ♥ en México
+            © {new Date().getFullYear()} Caeli Joyas y Accesorios · Argentina
           </p>
         </div>
       </footer>

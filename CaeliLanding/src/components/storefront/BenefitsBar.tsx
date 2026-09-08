@@ -2,14 +2,14 @@ import React from 'react';
 import { ShieldCheckIcon, TruckIcon, StarIcon, HeartIcon } from 'lucide-react';
 
 const BENEFITS = [
-  { icon: TruckIcon,      text: 'Envíos a todo México y el mundo' },
-  { icon: ShieldCheckIcon, text: 'Calidad garantizada en cada pieza' },
-  { icon: HeartIcon,       text: 'Hecho artesanalmente en lotes pequeños' },
+  { icon: TruckIcon,       text: 'Envíos a todo el país · Argentina' },
+  { icon: ShieldCheckIcon, text: 'Plata 925 & Acero Quirúrgico' },
+  { icon: HeartIcon,       text: 'Joyas y accesorios hipoalergénicos' },
   { icon: StarIcon,        text: 'Atención personalizada por WhatsApp' },
-  { icon: TruckIcon,       text: 'Envíos en 3–5 días hábiles' },
-  { icon: ShieldCheckIcon, text: 'Materiales de alta calidad' },
-  { icon: HeartIcon,       text: 'Piezas únicas · Colección limitada' },
-  { icon: StarIcon,        text: 'Diseñadas con amor en México' },
+  { icon: TruckIcon,       text: 'Envíos rápidos a toda la Argentina' },
+  { icon: ShieldCheckIcon, text: 'Calidad y brillo garantizados' },
+  { icon: HeartIcon,       text: 'Piezas seleccionadas con amor' },
+  { icon: StarIcon,        text: 'Brillo y estilo que te acompañan' },
 ];
 
 export function BenefitsBar() {

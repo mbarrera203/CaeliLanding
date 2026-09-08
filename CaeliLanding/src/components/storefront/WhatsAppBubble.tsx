@@ -17,9 +17,9 @@ export function WhatsAppBubble() {
     >
       <WhatsAppIcon className="h-6 w-6 shrink-0" />
       <span className="max-w-0 overflow-hidden whitespace-nowrap text-[13px] font-medium opacity-0 transition-[max-width,opacity,margin] duration-200 ease-soft group-hover:ml-2 group-hover:max-w-[12rem] group-hover:opacity-100">
-        ¡Escríbenos!
+        ¡Escribinos!
       </span>
-      <span className="sr-only">Chatea con Caeli por WhatsApp</span>
+      <span className="sr-only">Consultá con Caeli por WhatsApp</span>
     </motion.a>
   );
 }
