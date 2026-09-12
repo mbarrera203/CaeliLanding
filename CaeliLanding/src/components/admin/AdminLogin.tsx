@@ -58,8 +58,12 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
 
         {/* Encabezado con Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center p-3 rounded-full bg-amber-50/80 border border-amber-100 mb-4">
-            <Sparkles className="w-6 h-6 text-amber-600" />
+          <div className="flex justify-center mb-4">
+            <img
+              src="/LogoCaeli-removebg-preview.png"
+              alt="Caeli Joyas y Accesorios"
+              className="h-16 w-auto object-contain drop-shadow-xs"
+            />
           </div>
           <h1 className="font-serif text-2xl sm:text-3xl font-medium tracking-tight text-ink">
             Panel de Control
@@ -68,6 +72,7 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
             Ingreso exclusivo para administración de Caeli Joyas
           </p>
         </div>
+
 
         {/* Mensaje de error */}
         {error && (

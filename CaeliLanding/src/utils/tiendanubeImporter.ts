@@ -85,35 +85,50 @@ function extractDetail(name: string, tags: string, desc: string): string {
   return 'Plata 925 / Acero Quirúrgico';
 }
 
-// Parsear precio numérico tolerante a formatos de Argentina (15.000,00 o 15000.00 o 15000)
+// Parsear precio numérico tolerante a formatos de TiendaNube y Argentina (ej: 160,000.00 o 160.000,00 o 25000)
 function parsePrice(raw: any): number {
-  if (typeof raw === 'number') return Math.max(0, raw);
+  if (typeof raw === 'number') return Math.max(0, Math.round(raw));
   if (!raw) return 0;
   const str = String(raw).trim();
-  // Quitar símbolos de moneda y espacios
   const clean = str.replace(/[^0-9.,]/g, '');
   if (!clean) return 0;
 
-  // Si tiene punto y coma, ej: 15.000,50
-  if (clean.includes('.') && clean.includes(',')) {
-    const formatted = clean.replace(/\./g, '').replace(',', '.');
-    return parseFloat(formatted) || 0;
-  }
-  // Si solo tiene coma como decimal, ej: 15000,50
-  if (clean.includes(',')) {
-    return parseFloat(clean.replace(',', '.')) || 0;
-  }
-  // Si solo tiene punto, puede ser 15.000 (miles) o 15.50 (decimal)
-  if (clean.includes('.')) {
-    const parts = clean.split('.');
-    if (parts.length > 2 || (parts.length === 2 && parts[1].length === 3)) {
-      // Es separador de miles: 15.000
-      return parseFloat(clean.replace(/\./g, '')) || 0;
+  // Caso 1: Formato TiendaNube (coma para miles, punto para decimales): 160,000.00
+  if (clean.includes(',') && clean.includes('.')) {
+    if (clean.indexOf(',') < clean.lastIndexOf('.')) {
+      // Quitar separador de miles ','
+      return Math.round(parseFloat(clean.replace(/,/g, ''))) || 0;
+    } else {
+      // 160.000,00 -> quitar '.' y reemplazar ',' por '.'
+      return Math.round(parseFloat(clean.replace(/\./g, '').replace(',', '.'))) || 0;
     }
   }
 
-  return parseFloat(clean) || 0;
+  // Caso 2: Solo coma (ej: 160000,00 o 5,900)
+  if (clean.includes(',')) {
+    const parts = clean.split(',');
+    if (parts.length === 2 && parts[1].length === 2) {
+      // Decimales: 5900,00
+      return Math.round(parseFloat(clean.replace(',', '.'))) || 0;
+    }
+    // Miles: 160,000 o 5,900
+    return Math.round(parseFloat(clean.replace(/,/g, ''))) || 0;
+  }
+
+  // Caso 3: Solo punto (ej: 160000.00 o 160.000)
+  if (clean.includes('.')) {
+    const parts = clean.split('.');
+    if (parts.length === 2 && parts[1].length === 2) {
+      // Decimales: 160000.00
+      return Math.round(parseFloat(clean)) || 0;
+    }
+    // Miles: 160.000
+    return Math.round(parseFloat(clean.replace(/\./g, ''))) || 0;
+  }
+
+  return Math.round(parseFloat(clean)) || 0;
 }
+
 
 export interface TiendaNubeProductResult {
   products: Product[];
@@ -121,12 +136,27 @@ export interface TiendaNubeProductResult {
   totalImages: number;
 }
 
-export function parseTiendaNubeCsv(file: File): Promise<TiendaNubeProductResult> {
+export async function parseTiendaNubeCsv(file: File): Promise<TiendaNubeProductResult> {
+  // Leer el buffer y decodificar en ISO-8859-1 (Latin1 de TiendaNube Argentina) o UTF-8
+  const buffer = await file.arrayBuffer();
+  let text = '';
+  try {
+    const textUtf8 = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+    if (textUtf8.includes('\uFFFD')) {
+      text = new TextDecoder('iso-8859-1').decode(buffer);
+    } else {
+      text = textUtf8;
+    }
+  } catch {
+    text = new TextDecoder('iso-8859-1').decode(buffer);
+  }
+
   return new Promise((resolve, reject) => {
-    Papa.parse(file, {
+    Papa.parse(text, {
       header: true,
       skipEmptyLines: true,
       transformHeader: (h) => h.trim(),
+
       complete: (results) => {
         try {
           const rows = results.data as Record<string, any>[];
@@ -229,7 +259,7 @@ export function parseTiendaNubeCsv(file: File): Promise<TiendaNubeProductResult>
 
               // Buscar imágenes de alta resolución en el mapa de TiendaNube por slug
               const sitemapImages = (tiendanubeImageMap as Record<string, string[]>)[slug] ||
-                                    (tiendanubeImageMap as Record<string, string[]>)[safeId] || [];
+                (tiendanubeImageMap as Record<string, string[]>)[safeId] || [];
 
               const initialImages = new Set<string>();
               for (const img of sitemapImages) {
@@ -304,7 +334,7 @@ export function parseTiendaNubeCsv(file: File): Promise<TiendaNubeProductResult>
           reject(err);
         }
       },
-      error: (error) => {
+      error: (error: any) => {
         reject(new Error(`Error al leer CSV: ${error.message}`));
       },
     });

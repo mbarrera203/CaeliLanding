@@ -85,7 +85,8 @@ export function Storefront({ actionStyle }: StorefrontProps) {
 
       <main>
         {/* Carrusel de accesorios destacados */}
-        <AccessoriesCarousel />
+        <AccessoriesCarousel products={catalog} />
+
 
         {/* Separador decorativo */}
         <div className="mx-auto max-w-[1240px] px-5 sm:px-8">

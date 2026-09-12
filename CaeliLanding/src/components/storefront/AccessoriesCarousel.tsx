@@ -1,24 +1,41 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { WhatsAppIcon } from '../icons/WhatsAppIcon';
-import { products } from '../../data/products';
+import { Product } from '../../types/product';
 import { formatPrice, orderLink } from '../../utils/whatsapp';
 
-// Filtramos solo productos activos con stock para el carrusel
-const CAROUSEL_PRODUCTS = products.filter((p) => p.active && p.stock > 0);
+interface AccessoriesCarouselProps {
+  products?: Product[];
+}
 
 const AUTOPLAY_INTERVAL = 4500;
 
-export function AccessoriesCarousel() {
+export function AccessoriesCarousel({ products = [] }: AccessoriesCarouselProps) {
+  const carouselItems = useMemo(() => {
+    if (!products || products.length === 0) return [];
+    // Priorizar productos con fotos reales y con stock
+    const valid = products.filter(
+      (p) =>
+        p.active &&
+        p.stock > 0 &&
+        p.images &&
+        p.images.length > 0 &&
+        !p.images[0].includes('LogoCaeli')
+    );
+    // Mostrar hasta 8 piezas destacadas en el carrusel
+    return valid.slice(0, 8);
+  }, [products]);
+
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [paused, setPaused] = useState(false);
-  const total = CAROUSEL_PRODUCTS.length;
+  const total = carouselItems.length;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const goTo = useCallback(
     (index: number, dir: 1 | -1) => {
+      if (total === 0) return;
       setDirection(dir);
       setCurrent(((index % total) + total) % total);
     },
@@ -30,16 +47,16 @@ export function AccessoriesCarousel() {
 
   // Autoplay
   useEffect(() => {
-    if (paused) return;
+    if (paused || total <= 1) return;
     timerRef.current = setInterval(() => next(), AUTOPLAY_INTERVAL);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [next, paused]);
+  }, [next, paused, total]);
 
-  if (CAROUSEL_PRODUCTS.length === 0) return null;
+  if (carouselItems.length === 0) return null;
 
-  const product = CAROUSEL_PRODUCTS[current];
+  const product = carouselItems[current] || carouselItems[0];
 
   const variants = {
     enter: (dir: number) => ({
@@ -79,26 +96,28 @@ export function AccessoriesCarousel() {
           </div>
 
           {/* Controles */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              id="carousel-prev"
-              onClick={prev}
-              aria-label="Anterior"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-ivory text-muted transition-all duration-200 hover:border-gold hover:bg-gold-pale hover:text-gold-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/40"
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              id="carousel-next"
-              onClick={next}
-              aria-label="Siguiente"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-ivory text-muted transition-all duration-200 hover:border-gold hover:bg-gold-pale hover:text-gold-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/40"
-            >
-              <ChevronRightIcon className="h-4 w-4" />
-            </button>
-          </div>
+          {total > 1 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                id="carousel-prev"
+                onClick={prev}
+                aria-label="Anterior"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-ivory text-muted transition-all duration-200 hover:border-gold hover:bg-gold-pale hover:text-gold-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 cursor-pointer"
+              >
+                <ChevronLeftIcon className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                id="carousel-next"
+                onClick={next}
+                aria-label="Siguiente"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-ivory text-muted transition-all duration-200 hover:border-gold hover:bg-gold-pale hover:text-gold-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 cursor-pointer"
+              >
+                <ChevronRightIcon className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Slide principal */}
@@ -154,9 +173,9 @@ export function AccessoriesCarousel() {
               </div>
 
               {/* Imagen */}
-              <div className="relative flex-1 overflow-hidden">
+              <div className="relative flex-1 overflow-hidden bg-sand/40">
                 <img
-                  src={product.images[0]}
+                  src={product.images[0] || '/LogoCaeli-removebg-preview.png'}
                   alt={product.name}
                   className="absolute inset-0 h-full w-full object-cover"
                 />
@@ -168,25 +187,27 @@ export function AccessoriesCarousel() {
         </div>
 
         {/* Dots */}
-        <div className="mt-5 flex items-center justify-center gap-1.5" role="tablist" aria-label="Slides del carrusel">
-          {CAROUSEL_PRODUCTS.map((p, i) => (
-            <button
-              key={p.id}
-              type="button"
-              role="tab"
-              id={`carousel-dot-${i}`}
-              aria-selected={i === current}
-              aria-label={`Ver ${p.name}`}
-              onClick={() => goTo(i, i > current ? 1 : -1)}
-              className={[
-                'rounded-full transition-all duration-300',
-                i === current
-                  ? 'h-2 w-6 bg-gold'
-                  : 'h-2 w-2 bg-line hover:bg-gold/40',
-              ].join(' ')}
-            />
-          ))}
-        </div>
+        {total > 1 && (
+          <div className="mt-5 flex items-center justify-center gap-1.5" role="tablist" aria-label="Slides del carrusel">
+            {carouselItems.map((p, i) => (
+              <button
+                key={p.id}
+                type="button"
+                role="tab"
+                id={`carousel-dot-${i}`}
+                aria-selected={i === current}
+                aria-label={`Ver ${p.name}`}
+                onClick={() => goTo(i, i > current ? 1 : -1)}
+                className={[
+                  'rounded-full transition-all duration-300 cursor-pointer',
+                  i === current
+                    ? 'h-2 w-6 bg-gold'
+                    : 'h-2 w-2 bg-line hover:bg-gold/40',
+                ].join(' ')}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

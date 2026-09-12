@@ -13,10 +13,11 @@ export function AdminHeader({ userEmail, onLogout }: AdminHeaderProps) {
       <div className="mx-auto flex max-w-[1180px] items-center justify-between px-8 py-4">
         <div className="flex items-center gap-4">
           <img
-            src="/LogoCaeli.png"
+            src="/LogoCaeli-removebg-preview.png"
             alt="Caeli"
-            className="h-9 w-auto"
+            className="h-10 sm:h-12 w-auto object-contain"
           />
+
           <span className="text-[13px] text-muted">Panel de productos</span>
           {userEmail && (
             <span className="hidden sm:inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-medium text-stone-600 border border-stone-200">
