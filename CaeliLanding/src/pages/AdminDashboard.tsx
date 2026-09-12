@@ -6,7 +6,8 @@ import { AdminLogin } from '../components/admin/AdminLogin';
 import { TiendaNubeImportModal } from '../components/admin/TiendaNubeImportModal';
 import { useInventory } from '../hooks/useInventory';
 import { useAuth } from '../hooks/useAuth';
-import { CATEGORIES } from '../types/product';
+import { CATEGORIES, Material, MATERIALS, TIENDANUBE_TREE } from '../types/product';
+import { getProductClassification, normalizeSubcategory } from '../utils/productClassification';
 import { Loader2, CloudUpload, Database, FileSpreadsheet, Search, X } from 'lucide-react';
 
 export function AdminDashboard() {
@@ -15,6 +16,8 @@ export function AdminDashboard() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
+  const [selectedMaterial, setSelectedMaterial] = useState<'Todos' | Material>('Todos');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<'Todos' | string>('Todos');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'out_of_stock'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 50;
@@ -75,18 +78,46 @@ export function AdminDashboard() {
     };
   }, [addImagesToProduct, removeImageFromProduct, setDescription]);
 
+  // Subcategorías disponibles según el material seleccionado
+  const availableSubcategories = useMemo(() => {
+    if (selectedMaterial === 'Todos') {
+      const set = new Set<string>();
+      Object.values(TIENDANUBE_TREE).forEach((subs) =>
+        subs.forEach((s) => set.add(normalizeSubcategory(s)))
+      );
+      return Array.from(set);
+    }
+    return (TIENDANUBE_TREE[selectedMaterial] || []).map(normalizeSubcategory);
+  }, [selectedMaterial]);
+
   // Resetear página al filtrar
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategory, statusFilter]);
+  }, [searchQuery, selectedCategory, selectedMaterial, selectedSubcategory, statusFilter]);
 
   // Filtrado de productos
   const filteredItems = useMemo(() => {
     let result = items;
 
-    // Filtro de categoría
+    // Filtro de categoría general
     if (selectedCategory !== 'Todas') {
       result = result.filter((item) => item.category === selectedCategory);
+    }
+
+    // Filtro de Material (TiendaNube)
+    if (selectedMaterial !== 'Todos') {
+      result = result.filter((item) => {
+        const { material } = getProductClassification(item);
+        return material === selectedMaterial;
+      });
+    }
+
+    // Filtro de Subcategoría (TiendaNube)
+    if (selectedSubcategory !== 'Todos') {
+      result = result.filter((item) => {
+        const { subcategory } = getProductClassification(item);
+        return normalizeSubcategory(subcategory) === normalizeSubcategory(selectedSubcategory);
+      });
     }
 
     // Filtro de estado
@@ -124,7 +155,7 @@ export function AdminDashboard() {
     }
 
     return result;
-  }, [items, selectedCategory, statusFilter, searchQuery]);
+  }, [items, selectedCategory, selectedMaterial, selectedSubcategory, statusFilter, searchQuery]);
 
   // Paginación
   const totalPages = Math.ceil(filteredItems.length / pageSize) || 1;
@@ -224,9 +255,9 @@ export function AdminDashboard() {
 
         {/* Barra de Búsqueda y Filtros */}
         <div className="mt-6 rounded-2xl border border-line bg-white p-4 shadow-sm space-y-3">
-          <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+          <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
             {/* Buscador */}
-            <div className="relative flex-1">
+            <div className="relative flex-1 min-w-[220px]">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted pointer-events-none" />
               <input
                 type="text"
@@ -247,55 +278,116 @@ export function AdminDashboard() {
               )}
             </div>
 
-            {/* Selector de Categoría */}
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-muted font-medium shrink-0">Categoría:</label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="text-xs bg-sand/40 border border-line rounded-xl px-3 py-2 text-ink font-medium focus:outline-none focus:border-ink/40 cursor-pointer"
-              >
-                <option value="Todas">Todas ({items.length})</option>
-                {CATEGORIES.map((cat) => {
-                  const count = items.filter((i) => i.category === cat).length;
-                  return (
-                    <option key={cat} value={cat}>
-                      {cat} ({count})
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
+            {/* Selectores */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Selector de Material (TiendaNube) */}
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs text-muted font-medium shrink-0">Material:</label>
+                <select
+                  value={selectedMaterial}
+                  onChange={(e) => {
+                    setSelectedMaterial(e.target.value as any);
+                    setSelectedSubcategory('Todos');
+                  }}
+                  className="text-xs bg-sand/40 border border-line rounded-xl px-3 py-2 text-ink font-medium focus:outline-none focus:border-ink/40 cursor-pointer"
+                >
+                  <option value="Todos">Todos ({items.length})</option>
+                  {MATERIALS.map((mat) => {
+                    const count = items.filter((i) => getProductClassification(i).material === mat).length;
+                    return (
+                      <option key={mat} value={mat}>
+                        {mat} ({count})
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
 
-            {/* Selector de Estado */}
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-muted font-medium shrink-0">Estado:</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="text-xs bg-sand/40 border border-line rounded-xl px-3 py-2 text-ink font-medium focus:outline-none focus:border-ink/40 cursor-pointer"
-              >
-                <option value="all">Todos ({items.length})</option>
-                <option value="active">Activos / En stock ({liveCount})</option>
-                <option value="out_of_stock">Sin stock ({outOfStock})</option>
-              </select>
+              {/* Selector de Subcategoría / Tipo */}
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs text-muted font-medium shrink-0">Tipo:</label>
+                <select
+                  value={selectedSubcategory}
+                  onChange={(e) => setSelectedSubcategory(e.target.value)}
+                  className="text-xs bg-sand/40 border border-line rounded-xl px-3 py-2 text-ink font-medium focus:outline-none focus:border-ink/40 cursor-pointer"
+                >
+                  <option value="Todos">Todos</option>
+                  {availableSubcategories.map((sub) => {
+                    const count = items.filter((i) => {
+                      const c = getProductClassification(i);
+                      if (selectedMaterial !== 'Todos' && c.material !== selectedMaterial) return false;
+                      return normalizeSubcategory(c.subcategory) === normalizeSubcategory(sub);
+                    }).length;
+                    return (
+                      <option key={sub} value={sub}>
+                        {sub} ({count})
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* Selector de Estado */}
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs text-muted font-medium shrink-0">Estado:</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  className="text-xs bg-sand/40 border border-line rounded-xl px-3 py-2 text-ink font-medium focus:outline-none focus:border-ink/40 cursor-pointer"
+                >
+                  <option value="all">Todos ({items.length})</option>
+                  <option value="active">Activos ({liveCount})</option>
+                  <option value="out_of_stock">Sin stock ({outOfStock})</option>
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Resumen de filtros activos si se ha aplicado alguno */}
-          {(searchQuery || selectedCategory !== 'Todas' || statusFilter !== 'all') && (
+          {(searchQuery || selectedMaterial !== 'Todos' || selectedSubcategory !== 'Todos' || selectedCategory !== 'Todas' || statusFilter !== 'all') && (
             <div className="flex items-center justify-between pt-2 border-t border-line/40 text-xs text-muted">
-              <span>
-                Mostrando <strong className="text-ink font-semibold">{filteredItems.length}</strong> de {items.length} productos
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span>
+                  Mostrando <strong className="text-ink font-semibold">{filteredItems.length}</strong> de {items.length} productos
+                </span>
+                {selectedMaterial !== 'Todos' && (
+                  <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-full text-[11px] font-medium">
+                    Material: {selectedMaterial}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedMaterial('Todos');
+                        setSelectedSubcategory('Todos');
+                      }}
+                      className="hover:text-amber-700 ml-0.5"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                {selectedSubcategory !== 'Todos' && (
+                  <span className="inline-flex items-center gap-1 bg-stone-100 text-stone-800 border border-stone-200 px-2 py-0.5 rounded-full text-[11px] font-medium">
+                    Tipo: {selectedSubcategory}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSubcategory('Todos')}
+                      className="hover:text-stone-600 ml-0.5"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedCategory('Todas');
+                  setSelectedMaterial('Todos');
+                  setSelectedSubcategory('Todos');
                   setStatusFilter('all');
                 }}
-                className="text-amber-700 hover:text-amber-800 font-medium underline cursor-pointer"
+                className="text-amber-700 hover:text-amber-800 font-medium underline cursor-pointer shrink-0"
               >
                 Limpiar filtros
               </button>

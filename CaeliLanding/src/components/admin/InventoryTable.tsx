@@ -4,6 +4,7 @@ import { CheckIcon, Trash2Icon, PlusIcon, XIcon } from 'lucide-react';
 import { InlineField } from './InlineField';
 import { StatusToggle } from './StatusToggle';
 import { Category, CATEGORIES, Product } from '../../types/product';
+import { getProductClassification } from '../../utils/productClassification';
 
 interface InventoryTableProps {
   items: Product[];
@@ -77,7 +78,9 @@ export function InventoryTable({
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => (
+          {items.map((item) => {
+            const classification = getProductClassification(item);
+            return (
             <tr
               key={item.id}
               className="group border-b border-line/70 align-top transition-colors duration-150 ease-soft last:border-b-0 hover:bg-sand/30"
@@ -98,18 +101,26 @@ export function InventoryTable({
                     )}
                   </div>
 
-                  <select
-                    value={item.category}
-                    onChange={(e) => onCategory(item.id, e.target.value as Category)}
-                    aria-label={`Categoría de ${item.name}`}
-                    className="ml-2 w-[120px] cursor-pointer rounded-md bg-transparent py-0.5 pr-1 text-[12px] text-muted outline-none transition-colors duration-150 ease-soft hover:text-ink focus:text-ink"
-                  >
-                    {CATEGORIES.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="ml-2 flex items-center flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-700 border border-stone-200">
+                      <span className="font-semibold text-amber-800">{classification.material}</span>
+                      {classification.subcategory && <span className="text-stone-400">·</span>}
+                      {classification.subcategory && <span>{classification.subcategory}</span>}
+                    </span>
+
+                    <select
+                      value={item.category}
+                      onChange={(e) => onCategory(item.id, e.target.value as Category)}
+                      aria-label={`Categoría de ${item.name}`}
+                      className="cursor-pointer rounded-md bg-transparent py-0.5 pr-1 text-[12px] text-muted outline-none transition-colors duration-150 ease-soft hover:text-ink focus:text-ink"
+                    >
+                      {CATEGORIES.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
                   <div className="ml-2 mt-1">
                     <InlineField
@@ -213,7 +224,8 @@ export function InventoryTable({
                 </div>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
 

@@ -4,17 +4,14 @@ import { Link } from 'react-router-dom';
 import { LockIcon } from 'lucide-react';
 import { StoreHeader } from '../components/storefront/StoreHeader';
 import { BenefitsBar } from '../components/storefront/BenefitsBar';
-import { AccessoriesCarousel } from '../components/storefront/AccessoriesCarousel';
-import {
-  CategoryFilter,
-  CategoryFilterValue,
-} from '../components/storefront/CategoryFilter';
+import { CategoryFilter } from '../components/storefront/CategoryFilter';
 import {
   ProductCard,
   CardActionStyle,
 } from '../components/storefront/ProductCard';
 import { WhatsAppBubble } from '../components/storefront/WhatsAppBubble';
-import { Category, CATEGORIES, Product } from '../types/product';
+import { Category, Material, Product } from '../types/product';
+import { getProductClassification, normalizeSubcategory } from '../utils/productClassification';
 import { WHATSAPP_DISPLAY, whatsappLink } from '../utils/whatsapp';
 import { supabase } from '../lib/supabase';
 
@@ -25,7 +22,9 @@ interface StorefrontProps {
 export function Storefront({ actionStyle }: StorefrontProps) {
   const [catalog, setCatalog] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState<CategoryFilterValue>('Todos');
+  const [selectedMaterial, setSelectedMaterial] = useState<'Todos' | Material>('Todos');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<'Todos' | string>('Todos');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     async function loadStoreCatalog() {
@@ -61,19 +60,64 @@ export function Storefront({ actionStyle }: StorefrontProps) {
     loadStoreCatalog();
   }, []);
 
-  const counts = useMemo(() => {
-    const base = { Todos: catalog.length } as Record<CategoryFilterValue, number>;
-    CATEGORIES.forEach((c) => {
-      base[c] = catalog.filter((p) => p.category === c).length;
-    });
-    return base;
-  }, [catalog]);
+  // Conteos de materiales y subcategorías
+  const { materialCounts, subcategoryCounts } = useMemo(() => {
+    const matCounts: Record<string, number> = {};
+    const subCounts: Record<string, number> = {};
 
+    catalog.forEach((p) => {
+      const { material, subcategory } = getProductClassification(p);
+      matCounts[material] = (matCounts[material] || 0) + 1;
+
+      if (selectedMaterial === 'Todos' || material === selectedMaterial) {
+        subCounts[subcategory] = (subCounts[subcategory] || 0) + 1;
+        const norm = normalizeSubcategory(subcategory);
+        if (norm !== subcategory) {
+          subCounts[norm] = (subCounts[norm] || 0) + 1;
+        }
+      }
+    });
+
+    return { materialCounts: matCounts, subcategoryCounts: subCounts };
+  }, [catalog, selectedMaterial]);
+
+  // Productos filtrados y ordenados
   const visible = useMemo(() => {
-    const filtered =
-      category === 'Todos'
-        ? catalog
-        : catalog.filter((p) => p.category === category);
+    let filtered = catalog;
+
+    // 1. Filtro por material
+    if (selectedMaterial !== 'Todos') {
+      filtered = filtered.filter((p) => {
+        const { material } = getProductClassification(p);
+        return material === selectedMaterial;
+      });
+    }
+
+    // 2. Filtro por subcategoría
+    if (selectedSubcategory !== 'Todos') {
+      const normTarget = normalizeSubcategory(selectedSubcategory);
+      filtered = filtered.filter((p) => {
+        const { subcategory } = getProductClassification(p);
+        return normalizeSubcategory(subcategory) === normTarget;
+      });
+    }
+
+    // 3. Filtro por búsqueda de texto
+    if (searchQuery.trim()) {
+      const q = searchQuery
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+      filtered = filtered.filter((p) => {
+        const { material, subcategory } = getProductClassification(p);
+        const combined = `${p.name} ${p.detail} ${material} ${subcategory} ${p.description || ''}`
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
+        return combined.includes(q);
+      });
+    }
 
     // Los productos disponibles van primero; los agotados o sin stock van estrictamente al final
     return [...filtered].sort((a, b) => {
@@ -91,7 +135,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
       }
       return 0;
     });
-  }, [category, catalog]);
+  }, [catalog, selectedMaterial, selectedSubcategory, searchQuery]);
 
 
 
@@ -155,45 +199,53 @@ export function Storefront({ actionStyle }: StorefrontProps) {
       <BenefitsBar />
 
       <main>
-        {/* Carrusel de accesorios destacados */}
-        <AccessoriesCarousel products={catalog} />
+        {/* Hero / Encabezado centrado del catálogo */}
+        <section className="mx-auto max-w-[860px] px-5 pb-7 pt-8 sm:px-8 sm:pb-9 sm:pt-12 text-center">
+          <div className="flex flex-col items-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-gold-pale px-3.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-gold-dark border border-gold/20 mb-3 shadow-sm">
+              ✦ Catálogo Exclusivo
+            </span>
+            <h1 className="font-serif text-[34px] font-medium leading-[1.15] tracking-tight text-ink sm:text-[48px] md:text-[54px]">
+              Joyas para cada momento
+            </h1>
+            <p className="mt-3.5 max-w-xl text-[14px] leading-relaxed text-muted sm:text-[15px]">
+              Plata 925 y acero quirúrgico seleccionados para acompañarte todos los días.
+              Sin vueltas ni registros — elegí tu pieza favorita y pedila directo por WhatsApp.
+            </p>
 
-
-        {/* Separador decorativo */}
-        <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
-          <div className="gold-line my-2 opacity-60" />
-        </div>
-
-        {/* Hero / Encabezado del catálogo */}
-        <section className="mx-auto max-w-[1240px] px-5 pb-8 pt-10 sm:px-8 sm:pb-10 sm:pt-14">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <div className="max-w-xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">
-                ✦ &nbsp;Toda la Colección
-              </p>
-              <h1 className="mt-2 font-serif text-[32px] font-medium leading-tight tracking-tight text-ink sm:text-[48px]">
-                Joyas para cada momento
-              </h1>
-              <p className="mt-3 text-[15px] leading-relaxed text-muted sm:text-base">
-                Plata 925 y acero quirúrgico seleccionados para acompañarte todos los días.
-                Sin vueltas ni registros — elegí tu pieza favorita y pedila directo por WhatsApp.
-              </p>
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="text-[13px] leading-relaxed text-muted">
-                Plata 925 & Acero Quirúrgico
-                <br />
-                Envíos a todo el país 🇦🇷
-              </p>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[12px] text-muted">
+              <span className="inline-flex items-center gap-1">
+                <span className="text-gold">✦</span> Plata 925 & Acero Quirúrgico
+              </span>
+              <span className="text-stone-300">·</span>
+              <span className="inline-flex items-center gap-1">
+                <span>🇦🇷</span> Envíos a todo el país
+              </span>
+              <span className="text-stone-300">·</span>
+              <span className="inline-flex items-center gap-1">
+                <span>💬</span> Pedido directo por WhatsApp
+              </span>
             </div>
           </div>
         </section>
 
-        {/* Filtros de categoría */}
+        {/* Filtros de categoría y materiales estilo TiendaNube */}
         <CategoryFilter
-          value={category}
-          onChange={setCategory}
-          counts={counts}
+          selectedMaterial={selectedMaterial}
+          selectedSubcategory={selectedSubcategory}
+          searchQuery={searchQuery}
+          onSelectMaterial={setSelectedMaterial}
+          onSelectSubcategory={setSelectedSubcategory}
+          onSearchChange={setSearchQuery}
+          onReset={() => {
+            setSelectedMaterial('Todos');
+            setSelectedSubcategory('Todos');
+            setSearchQuery('');
+          }}
+          materialCounts={materialCounts}
+          subcategoryCounts={subcategoryCounts}
+          totalFiltered={visible.length}
+          totalAll={catalog.length}
         />
 
         {/* Catálogo */}
@@ -232,7 +284,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
                   product={product}
                   index={index}
                   actionStyle={actionStyle}
-                  featured={category === 'Todos' && Boolean(product.featured)}
+                  featured={selectedMaterial === 'Todos' && Boolean(product.featured)}
                 />
               ))}
             </div>
