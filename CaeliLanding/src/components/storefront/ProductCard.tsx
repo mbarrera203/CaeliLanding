@@ -150,7 +150,7 @@ export function ProductCard({
 
         {!soldOut && product.stock <= 3 && !featured && (
           <span className="absolute right-3 top-3 rounded-full bg-rose/90 px-3 py-1 text-[11px] font-medium text-ivory backdrop-blur-sm z-10 shadow-sm">
-            ¡Últimas {product.stock}!
+            {product.stock === 1 ? '¡Última unidad!' : `¡Últimas ${product.stock}!`}
           </span>
         )}
       </div>

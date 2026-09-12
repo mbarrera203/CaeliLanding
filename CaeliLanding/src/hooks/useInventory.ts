@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { products as seedProducts } from '../data/products';
 import { Category, Product } from '../types/product';
 import { supabase } from '../lib/supabase';
 
@@ -42,7 +41,7 @@ async function uploadFileToSupabase(file: File): Promise<string> {
 }
 
 export function useInventory() {
-  const [items, setItems] = useState<Product[]>(seedProducts);
+  const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [isEmptyDb, setIsEmptyDb] = useState(false);
@@ -59,8 +58,8 @@ export function useInventory() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.warn('Error al leer de Supabase (usando datos locales de respaldo):', error.message);
-        setItems(seedProducts);
+        console.warn('Error al leer de Supabase:', error.message);
+        setItems([]);
         return;
       }
 
@@ -72,7 +71,7 @@ export function useInventory() {
           price: Number(row.price) || 0,
           detail: row.detail || '',
           description: row.description || '',
-          images: Array.isArray(row.images) && row.images.length > 0 ? row.images : ['/LogoCaeli.png'],
+          images: Array.isArray(row.images) && row.images.length > 0 ? row.images : ['/LogoCaeli-removebg-preview.png'],
           stock: Number(row.stock) || 0,
           active: Boolean(row.active),
           featured: Boolean(row.featured),
@@ -82,11 +81,11 @@ export function useInventory() {
       } else {
         // Base de datos vacía
         setIsEmptyDb(true);
-        setItems(seedProducts);
+        setItems([]);
       }
     } catch (err) {
       console.error('Error cargando inventario:', err);
-      setItems(seedProducts);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -144,16 +143,16 @@ export function useInventory() {
   const setStock = useCallback(
     (id: string, stock: number) => {
       const next = Math.max(0, Math.round(stock));
-      
+
       setItems((prev) =>
 
         prev.map((item) =>
           item.id === id
             ? {
-                ...item,
-                stock: next,
-                active: next === 0 ? false : item.active,
-              }
+              ...item,
+              stock: next,
+              active: next === 0 ? false : item.active,
+            }
             : item
         )
       );
@@ -199,10 +198,10 @@ export function useInventory() {
         return prev.map((item) =>
           item.id === id
             ? {
-                ...item,
-                active: nextActive,
-                stock: nextStock,
-              }
+              ...item,
+              active: nextActive,
+              stock: nextStock,
+            }
             : item
         );
       });
@@ -321,38 +320,6 @@ export function useInventory() {
     [flagSaved]
   );
 
-  // Función para poblar la base de datos con los productos iniciales
-  const seedInitialProducts = useCallback(async () => {
-    setIsUploading(true);
-    try {
-      const rows = seedProducts.map((p) => ({
-        id: p.id,
-        name: p.name,
-        category: p.category,
-        price: p.price,
-        detail: p.detail,
-        description: p.description || '',
-        images: p.images,
-        stock: p.stock,
-        active: p.active,
-        featured: p.featured || false,
-      }));
-
-      const { error } = await supabase.from('products').upsert(rows);
-      if (error) {
-        console.error('Error al migrar productos iniciales:', error.message);
-        alert('Error al migrar: ' + error.message);
-      } else {
-        setIsEmptyDb(false);
-        await loadProducts();
-      }
-    } catch (err) {
-      console.error('Error al sembrar productos:', err);
-    } finally {
-      setIsUploading(false);
-    }
-  }, [loadProducts]);
-
   return {
     items,
     loading,
@@ -369,7 +336,6 @@ export function useInventory() {
     addFiles,
     addImagesToProduct,
     removeImageFromProduct,
-    seedInitialProducts,
     refresh: loadProducts,
   };
 }

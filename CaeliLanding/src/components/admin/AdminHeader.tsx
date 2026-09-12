@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
-
-import { ArrowUpRightIcon, LogOutIcon } from 'lucide-react';
+import { ArrowUpRightIcon, LogOutIcon, Loader2 } from 'lucide-react';
 
 interface AdminHeaderProps {
   userEmail?: string | null;
   onLogout?: () => void;
+  isLoggingOut?: boolean;
 }
 
-export function AdminHeader({ userEmail, onLogout }: AdminHeaderProps) {
+export function AdminHeader({ userEmail, onLogout, isLoggingOut = false }: AdminHeaderProps) {
   return (
     <header className="border-b border-line bg-ivory">
       <div className="mx-auto flex max-w-[1180px] items-center justify-between px-8 py-4">
@@ -36,11 +36,21 @@ export function AdminHeader({ userEmail, onLogout }: AdminHeaderProps) {
           {onLogout && (
             <button
               onClick={onLogout}
+              disabled={isLoggingOut}
               title="Cerrar sesión"
-              className="inline-flex items-center gap-1.5 rounded-full border border-red-200/80 bg-red-50/50 px-3 py-1.5 text-[12px] text-red-600 hover:bg-red-100/70 hover:text-red-700 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full border border-red-200/80 bg-red-50/50 px-3 py-1.5 text-[12px] text-red-600 hover:bg-red-100/70 hover:text-red-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
-              <LogOutIcon className="h-3.5 w-3.5" aria-hidden="true" />
-              <span className="hidden sm:inline">Salir</span>
+              {isLoggingOut ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-red-600" />
+                  <span>Saliendo...</span>
+                </>
+              ) : (
+                <>
+                  <LogOutIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span className="hidden sm:inline">Salir</span>
+                </>
+              )}
             </button>
           )}
         </div>

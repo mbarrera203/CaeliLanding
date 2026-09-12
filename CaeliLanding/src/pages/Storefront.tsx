@@ -13,7 +13,6 @@ import {
   CardActionStyle,
 } from '../components/storefront/ProductCard';
 import { WhatsAppBubble } from '../components/storefront/WhatsAppBubble';
-import { products as initialProducts } from '../data/products';
 import { Category, CATEGORIES, Product } from '../types/product';
 import { WHATSAPP_DISPLAY, whatsappLink } from '../utils/whatsapp';
 import { supabase } from '../lib/supabase';
@@ -23,16 +22,17 @@ interface StorefrontProps {
 }
 
 export function Storefront({ actionStyle }: StorefrontProps) {
-  const [catalog, setCatalog] = useState<Product[]>(initialProducts);
+  const [catalog, setCatalog] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<CategoryFilterValue>('Todos');
 
   useEffect(() => {
     async function loadStoreCatalog() {
       try {
+        setLoading(true);
         const { data, error } = await supabase
           .from('products')
           .select('*')
-          .eq('active', true)
           .order('created_at', { ascending: false });
 
         if (!error && data && data.length > 0) {
@@ -43,7 +43,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
             price: Number(row.price),
             detail: row.detail || '',
             description: row.description || '',
-            images: Array.isArray(row.images) && row.images.length > 0 ? row.images : ['/LogoCaeli.png'],
+            images: Array.isArray(row.images) && row.images.length > 0 ? row.images : ['/LogoCaeli-removebg-preview.png'],
             stock: Number(row.stock),
             active: Boolean(row.active),
             featured: Boolean(row.featured),
@@ -51,7 +51,9 @@ export function Storefront({ actionStyle }: StorefrontProps) {
           setCatalog(liveProducts);
         }
       } catch (err) {
-        console.warn('Usando catálogo inicial local:', err);
+        console.warn('Error cargando catálogo desde Supabase:', err);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -66,13 +68,30 @@ export function Storefront({ actionStyle }: StorefrontProps) {
     return base;
   }, [catalog]);
 
-  const visible = useMemo(
-    () =>
+  const visible = useMemo(() => {
+    const filtered =
       category === 'Todos'
         ? catalog
-        : catalog.filter((p) => p.category === category),
-    [category, catalog]
-  );
+        : catalog.filter((p) => p.category === category);
+
+    // Los productos disponibles van primero; los agotados o sin stock van estrictamente al final
+    return [...filtered].sort((a, b) => {
+      const aAvailable = a.active && a.stock > 0 ? 1 : 0;
+      const bAvailable = b.active && b.stock > 0 ? 1 : 0;
+      if (bAvailable !== aAvailable) {
+        return bAvailable - aAvailable;
+      }
+      if (aAvailable === 1) {
+        const aFeatured = a.featured ? 1 : 0;
+        const bFeatured = b.featured ? 1 : 0;
+        if (bFeatured !== aFeatured) {
+          return bFeatured - aFeatured;
+        }
+      }
+      return 0;
+    });
+  }, [category, catalog]);
+
 
 
   return (
@@ -131,7 +150,20 @@ export function Storefront({ actionStyle }: StorefrontProps) {
           className="relative z-10 mx-auto max-w-[1240px] px-5 pb-28 pt-8 sm:px-8 sm:pt-12"
         >
 
-          {visible.length === 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 gap-x-5 gap-y-12 sm:grid-cols-2 md:grid-cols-3 md:gap-x-6 xl:grid-cols-4 xl:gap-x-8">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="animate-pulse flex flex-col rounded-2xl bg-white overflow-hidden shadow-sm border border-line/40">
+                  <div className="aspect-[4/5] bg-stone-100" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-stone-200/70 rounded w-3/4" />
+                    <div className="h-3 bg-stone-100 rounded w-1/2" />
+                    <div className="h-4 bg-stone-200/70 rounded w-1/3 mt-2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : visible.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-3xl bg-gold-pale/40 border border-line/60 px-6 py-20 text-center">
               <span className="text-3xl">✦</span>
               <p className="font-serif text-lg text-ink">Próximamente nuevas piezas</p>

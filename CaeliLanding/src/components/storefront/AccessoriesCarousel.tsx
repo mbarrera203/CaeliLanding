@@ -23,9 +23,20 @@ export function AccessoriesCarousel({ products = [] }: AccessoriesCarouselProps)
         p.images.length > 0 &&
         !p.images[0].includes('LogoCaeli')
     );
-    // Mostrar hasta 8 piezas destacadas en el carrusel
-    return valid.slice(0, 8);
+
+    if (valid.length === 0) return [];
+
+    // Mezclar aleatoriamente para mostrar una selección fresca cada vez
+    const shuffled = [...valid];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    // Mostrar hasta 8 piezas destacadas al azar
+    return shuffled.slice(0, 8);
   }, [products]);
+
 
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -155,9 +166,10 @@ export function AccessoriesCarousel({ products = [] }: AccessoriesCarouselProps)
                   </span>
                   {product.stock <= 5 && (
                     <span className="text-[11px] text-rose font-medium">
-                      Últimas {product.stock} unidades
+                      {product.stock === 1 ? '¡Última unidad disponible!' : `Últimas ${product.stock} unidades`}
                     </span>
                   )}
+
                 </div>
 
                 <a

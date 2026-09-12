@@ -30,7 +30,7 @@ export function InventoryTable({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, id: string) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
-    
+
     // Necesitamos invocar addImagesToProduct que viene de useInventory.
     // Como no está en Props de InventoryTable, lo vamos a disparar usando un evento custom
     // o vamos a pasarlo en props. ¡Ah, lo olvidé en las props! 
@@ -45,7 +45,7 @@ export function InventoryTable({
     const event = new CustomEvent('remove-product-image', { detail: { id, index } });
     document.dispatchEvent(event);
   };
-  
+
   const handleDescription = (id: string, value: string) => {
     const event = new CustomEvent('update-product-desc', { detail: { id, value } });
     document.dispatchEvent(event);
@@ -97,7 +97,7 @@ export function InventoryTable({
                       </span>
                     )}
                   </div>
-                  
+
                   <select
                     value={item.category}
                     onChange={(e) => onCategory(item.id, e.target.value as Category)}
@@ -142,7 +142,7 @@ export function InventoryTable({
                         )}
                       </div>
                     ))}
-                    
+
                     {/* Botón para añadir foto */}
                     <label className="flex h-14 w-14 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-line text-muted hover:border-gold hover:bg-gold-pale/30 hover:text-gold-dark transition-colors">
                       <PlusIcon className="h-4 w-4" />
