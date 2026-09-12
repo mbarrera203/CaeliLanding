@@ -1,6 +1,5 @@
-import React from 'react';
-
 interface StatusToggleProps {
+
   active: boolean;
   onChange: () => void;
   productName: string;
@@ -12,7 +11,7 @@ export function StatusToggle({
   productName,
 }: StatusToggleProps) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="inline-flex items-center gap-2.5">
       <button
         type="button"
         role="switch"
@@ -20,21 +19,22 @@ export function StatusToggle({
         aria-label={`Estado de ${productName}`}
         onClick={onChange}
         className={[
-          'relative h-6 w-11 shrink-0 rounded-full transition-colors duration-150 ease-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/25 focus-visible:ring-offset-2 focus-visible:ring-offset-white',
-          active ? 'bg-ink' : 'bg-greige',
+          'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/20',
+          active ? 'bg-ink' : 'bg-stone-200',
         ].join(' ')}
       >
         <span
+          aria-hidden="true"
           className={[
-            'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-150 ease-soft',
-            active ? 'translate-x-[22px]' : 'translate-x-0.5',
+            'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
+            active ? 'translate-x-5' : 'translate-x-0',
           ].join(' ')}
         />
       </button>
       <span
         className={[
-          'w-[100px] text-[13px]',
-          active ? 'text-ink' : 'text-muted',
+          'text-[13px] font-medium select-none min-w-[65px]',
+          active ? 'text-ink' : 'text-stone-400',
         ].join(' ')}
       >
         {active ? 'Activo' : 'Sin stock'}

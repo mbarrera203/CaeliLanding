@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { LockIcon } from 'lucide-react';
 import { StoreHeader } from '../components/storefront/StoreHeader';
@@ -13,32 +13,67 @@ import {
   CardActionStyle,
 } from '../components/storefront/ProductCard';
 import { WhatsAppBubble } from '../components/storefront/WhatsAppBubble';
-import { products } from '../data/products';
-import { CATEGORIES } from '../types/product';
+import { products as initialProducts } from '../data/products';
+import { Category, CATEGORIES, Product } from '../types/product';
 import { WHATSAPP_DISPLAY, whatsappLink } from '../utils/whatsapp';
+import { supabase } from '../lib/supabase';
 
 interface StorefrontProps {
   actionStyle: CardActionStyle;
 }
 
 export function Storefront({ actionStyle }: StorefrontProps) {
+  const [catalog, setCatalog] = useState<Product[]>(initialProducts);
   const [category, setCategory] = useState<CategoryFilterValue>('Todos');
 
+  useEffect(() => {
+    async function loadStoreCatalog() {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('active', true)
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          const liveProducts: Product[] = data.map((row: any) => ({
+            id: String(row.id),
+            name: row.name,
+            category: row.category as Category,
+            price: Number(row.price),
+            detail: row.detail || '',
+            description: row.description || '',
+            images: Array.isArray(row.images) && row.images.length > 0 ? row.images : ['/LogoCaeli.png'],
+            stock: Number(row.stock),
+            active: Boolean(row.active),
+            featured: Boolean(row.featured),
+          }));
+          setCatalog(liveProducts);
+        }
+      } catch (err) {
+        console.warn('Usando catálogo inicial local:', err);
+      }
+    }
+
+    loadStoreCatalog();
+  }, []);
+
   const counts = useMemo(() => {
-    const base = { Todos: products.length } as Record<CategoryFilterValue, number>;
+    const base = { Todos: catalog.length } as Record<CategoryFilterValue, number>;
     CATEGORIES.forEach((c) => {
-      base[c] = products.filter((p) => p.category === c).length;
+      base[c] = catalog.filter((p) => p.category === c).length;
     });
     return base;
-  }, []);
+  }, [catalog]);
 
   const visible = useMemo(
     () =>
       category === 'Todos'
-        ? products
-        : products.filter((p) => p.category === category),
-    [category]
+        ? catalog
+        : catalog.filter((p) => p.category === category),
+    [category, catalog]
   );
+
 
   return (
     <div className="min-h-full w-full bg-ivory font-sans">
@@ -92,8 +127,9 @@ export function Storefront({ actionStyle }: StorefrontProps) {
         {/* Catálogo */}
         <section
           aria-label="Catálogo de joyería"
-          className="mx-auto max-w-[1240px] px-5 pb-28 pt-8 sm:px-8 sm:pt-12"
+          className="relative z-10 mx-auto max-w-[1240px] px-5 pb-28 pt-8 sm:px-8 sm:pt-12"
         >
+
           {visible.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-3xl bg-gold-pale/40 border border-line/60 px-6 py-20 text-center">
               <span className="text-3xl">✦</span>
@@ -123,7 +159,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
       <footer className="border-t border-line/60 bg-sand">
         <div className="mx-auto max-w-[1240px] px-5 py-10 sm:px-8">
           <div className="flex flex-col items-center gap-10 sm:flex-row sm:justify-between relative">
-            
+
             {/* Izquierda: Contacto */}
             <div className="flex-1 flex flex-col items-center sm:items-start gap-2">
               <p className="text-[12px] font-semibold uppercase tracking-wide text-ink">
