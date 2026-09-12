@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { LockIcon } from 'lucide-react';
 import { StoreHeader } from '../components/storefront/StoreHeader';
@@ -96,6 +97,57 @@ export function Storefront({ actionStyle }: StorefrontProps) {
 
   return (
     <div className="min-h-full w-full bg-ivory font-sans">
+      {/* Pantalla de carga inicial a pantalla completa */}
+      <AnimatePresence>
+        {loading && (
+          <motion.div
+            key="caeli-preloader"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#fdfcfa]"
+          >
+            <div className="flex flex-col items-center gap-6 px-6 text-center select-none">
+              {/* Logo con respiración suave */}
+              <motion.div
+                animate={{
+                  scale: [0.97, 1.03, 0.97],
+                  opacity: [0.85, 1, 0.85],
+                }}
+                transition={{
+                  duration: 2.2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              >
+                <img
+                  src="/LogoCaeli-removebg-preview.png"
+                  alt="Caeli Joyas y Accesorios"
+                  className="h-24 sm:h-28 w-auto object-contain drop-shadow-sm"
+                />
+              </motion.div>
+
+              {/* Barra de brillo dorada sutil */}
+              <div className="w-36 sm:w-44 h-[2px] bg-stone-200/60 rounded-full overflow-hidden relative">
+                <motion.div
+                  className="absolute inset-y-0 bg-gradient-to-r from-transparent via-gold to-transparent w-24"
+                  animate={{ x: [-90, 180] }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 1.3,
+                    ease: 'easeInOut',
+                  }}
+                />
+              </div>
+
+              <p className="font-serif text-[12px] tracking-[0.2em] uppercase text-muted">
+                Joyas & Accesorios
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header con Logo */}
       <StoreHeader />
 

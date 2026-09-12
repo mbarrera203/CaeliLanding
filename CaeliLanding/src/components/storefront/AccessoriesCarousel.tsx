@@ -14,26 +14,36 @@ const AUTOPLAY_INTERVAL = 4500;
 export function AccessoriesCarousel({ products = [] }: AccessoriesCarouselProps) {
   const carouselItems = useMemo(() => {
     if (!products || products.length === 0) return [];
-    // Priorizar productos con fotos reales y con stock
+    // Priorizar productos con fotos reales, con stock y sin fotos rotas viejas
     const valid = products.filter(
       (p) =>
         p.active &&
         p.stock > 0 &&
         p.images &&
         p.images.length > 0 &&
-        !p.images[0].includes('LogoCaeli')
+        !p.images[0].includes('LogoCaeli') &&
+        !p.images[0].includes('35158862') &&
+        !p.images[0].includes('1f4d47dd') &&
+        !p.images[0].includes('cfe65ea2') &&
+        !p.images[0].includes('cd18ea47') &&
+        !p.images[0].includes('8ad73b65')
     );
 
     if (valid.length === 0) return [];
 
-    // Mezclar aleatoriamente para mostrar una selección fresca cada vez
+    // Si la dueña marcó productos con estrella (destacados), mostrar prioritariamente esos
+    const featuredItems = valid.filter((p) => p.featured);
+    if (featuredItems.length > 0) {
+      return featuredItems;
+    }
+
+    // Si aún no marcó ninguno, mostrar hasta 8 piezas al azar
     const shuffled = [...valid];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
-    // Mostrar hasta 8 piezas destacadas al azar
     return shuffled.slice(0, 8);
   }, [products]);
 
@@ -189,6 +199,9 @@ export function AccessoriesCarousel({ products = [] }: AccessoriesCarouselProps)
                 <img
                   src={product.images[0] || '/LogoCaeli-removebg-preview.png'}
                   alt={product.name}
+                  onError={(e) => {
+                    e.currentTarget.src = '/LogoCaeli-removebg-preview.png';
+                  }}
                   className="absolute inset-0 h-full w-full object-cover"
                 />
                 {/* Overlay gradiente para transición suave con el panel */}
