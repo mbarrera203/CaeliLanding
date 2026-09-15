@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CheckIcon, Trash2Icon, PlusIcon, XIcon, Tag } from 'lucide-react';
 import { InlineField } from './InlineField';
 import { StatusToggle } from './StatusToggle';
-import { Category, CATEGORIES, Material, MATERIALS, TIENDANUBE_TREE, Product } from '../../types/product';
+import { Material, MATERIALS, TIENDANUBE_TREE, Product } from '../../types/product';
 import { getProductClassification } from '../../utils/productClassification';
 import { calculateDiscountPrice, calculateDiscountPercentage } from '../../utils/saleUtils';
 
@@ -13,7 +13,7 @@ interface InventoryTableProps {
   onName: (id: string, value: string) => void;
   onPrice: (id: string, value: number) => void;
   onStock: (id: string, value: number) => void;
-  onCategory: (id: string, value: Category) => void;
+
   onClassification?: (id: string, material: Material, subcategory: string) => void;
   onSale?: (id: string, onSale: boolean, originalPrice?: number, discountPercentage?: number, finalPrice?: number) => void;
   onToggle: (id: string) => void;
@@ -26,7 +26,7 @@ export function InventoryTable({
   onName,
   onPrice,
   onStock,
-  onCategory,
+
   onClassification,
   onSale,
   onToggle,
@@ -113,7 +113,7 @@ export function InventoryTable({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {/* Selector de Material / Tipo */}
                   <div>
                     <label className="block text-[10px] font-semibold text-stone-600 mb-1">
@@ -157,22 +157,7 @@ export function InventoryTable({
                     </select>
                   </div>
 
-                  {/* Selector de Categoría Tienda */}
-                  <div>
-                    <label className="block text-[10px] font-semibold text-stone-600 mb-1">
-                      Categoría
-                    </label>
-                    <select
-                      value={item.category}
-                      onChange={(e) => onCategory(item.id, e.target.value as Category)}
-                      aria-label={`Categoría de ${item.name}`}
-                      className="w-full rounded-lg border border-line bg-white px-2.5 py-1.5 text-xs font-medium text-ink outline-none hover:border-ink/40 focus:border-ink focus:ring-1 focus:ring-ink/20 transition-colors cursor-pointer"
-                    >
-                      {CATEGORIES.map((category) => (
-                        <option key={category} value={category}>{category}</option>
-                      ))}
-                    </select>
-                  </div>
+
                 </div>
               </div>
 
@@ -521,19 +506,7 @@ export function InventoryTable({
                           ))}
                         </select>
 
-                        {/* Selector de Categoría Tienda */}
-                        <select
-                          value={item.category}
-                          onChange={(e) => onCategory(item.id, e.target.value as Category)}
-                          aria-label={`Categoría de ${item.name}`}
-                          className="cursor-pointer rounded-md bg-transparent py-0.5 pr-1 text-[12px] text-muted outline-none transition-colors duration-150 ease-soft hover:text-ink focus:text-ink"
-                        >
-                          {CATEGORIES.map((category) => (
-                            <option key={category} value={category}>
-                              {category}
-                            </option>
-                          ))}
-                        </select>
+
                       </div>
 
                       <div className="ml-2 mt-1">

@@ -1,12 +1,3 @@
-export type Category = 'Anillos' | 'Collares' | 'Pulseras' | 'Aretes';
-
-export const CATEGORIES: Category[] = [
-  'Anillos',
-  'Collares',
-  'Pulseras',
-  'Aretes',
-];
-
 export type Material =
   | 'Plata'
   | 'Acero Blanco'
@@ -36,7 +27,7 @@ export const TIENDANUBE_TREE: Record<Material, string[]> = {
 export interface Product {
   id: string;
   name: string;
-  category: Category;
+  legacyCategory?: string;
   material?: string;
   subcategory?: string;
   price: number;

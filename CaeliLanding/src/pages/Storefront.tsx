@@ -10,7 +10,7 @@ import {
   CardActionStyle,
 } from '../components/storefront/ProductCard';
 import { WhatsAppBubble } from '../components/storefront/WhatsAppBubble';
-import { Category, Material, Product } from '../types/product';
+import { Material, Product } from '../types/product';
 import { getProductClassification, normalizeSubcategory } from '../utils/productClassification';
 import { WHATSAPP_DISPLAY, whatsappLink } from '../utils/whatsapp';
 import { supabase } from '../lib/supabase';
@@ -42,8 +42,8 @@ export function Storefront({ actionStyle }: StorefrontProps) {
             const { onSale, originalPrice, discountPercentage, cleanDescription } = parseSaleInfo(row.description, Number(row.price));
             const rawProduct: Product = {
               id: String(row.id),
-              name: row.name,
-              category: row.category as Category,
+              name: row.name || 'Sin nombre',
+              legacyCategory: row.category,
               price: Number(row.price),
               originalPrice,
               discountPercentage,
@@ -224,11 +224,8 @@ export function Storefront({ actionStyle }: StorefrontProps) {
 
       <main>
         {/* Hero / Encabezado centrado del catálogo */}
-        <section className="mx-auto max-w-[860px] px-5 pb-7 pt-8 sm:px-8 sm:pb-9 sm:pt-12 text-center">
+        <section className="mx-auto max-w-[860px] px-5 pb-7 sm:px-8 sm:pb-9 text-center">
           <div className="flex flex-col items-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-gold-pale px-3.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-gold-dark border border-gold/20 mb-3 shadow-sm">
-              ✦ Catálogo Exclusivo
-            </span>
             <h1 className="font-serif text-[34px] font-medium leading-[1.15] tracking-tight text-ink sm:text-[48px] md:text-[54px]">
               Joyas para cada momento
             </h1>

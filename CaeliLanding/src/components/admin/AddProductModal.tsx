@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { X, ImagePlusIcon, PlusIcon, XIcon, Loader2, PackagePlus, Tag } from 'lucide-react';
-import { CATEGORIES, Category, MATERIALS, Material, TIENDANUBE_TREE } from '../../types/product';
+import { MATERIALS, Material, TIENDANUBE_TREE } from '../../types/product';
 import { calculateDiscountPrice, calculateDiscountPercentage } from '../../utils/saleUtils';
 
 export interface NewProductData {
@@ -8,7 +8,7 @@ export interface NewProductData {
   description: string;
   price: number;
   stock: number;
-  category: Category;
+
   material: Material | '';
   subcategory: string;
   active: boolean;
@@ -29,7 +29,7 @@ const EMPTY_FORM: NewProductData = {
   description: '',
   price: 0,
   stock: 1,
-  category: 'Anillos',
+
   material: '',
   subcategory: '',
   active: true,
@@ -494,22 +494,7 @@ export function AddProductModal({ isOpen, onClose, onSubmit }: AddProductModalPr
             )}
           </div>
 
-          {/* Categoría */}
-          <div>
-            <label htmlFor="add-product-category" className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-              Categoría
-            </label>
-            <select
-              id="add-product-category"
-              value={form.category}
-              onChange={(e) => setForm((p) => ({ ...p, category: e.target.value as Category }))}
-              className="w-full rounded-xl border border-line px-4 py-2.5 text-sm text-ink bg-white focus:outline-none focus:border-amber-400 transition-colors cursor-pointer"
-            >
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
+
 
           {/* Material + Subcategoría */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

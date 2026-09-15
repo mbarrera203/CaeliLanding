@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Category, Material, Product } from '../types/product';
+import { Material, Product } from '../types/product';
 import { supabase } from '../lib/supabase';
 import { getProductClassification } from '../utils/productClassification';
 import { parseSaleInfo, formatDescriptionWithSale } from '../utils/saleUtils';
@@ -12,7 +12,7 @@ export interface NewProductData {
   discountPercentage?: number;
   onSale?: boolean;
   stock: number;
-  category: Category;
+
   material: Material | '';
   subcategory: string;
   active: boolean;
@@ -86,7 +86,7 @@ export function useInventory() {
           const rawItem: Product = {
             id: String(row.id),
             name: row.name || 'Sin nombre',
-            category: (row.category as Category) || 'Anillos',
+            legacyCategory: row.category,
             price: Number(row.price) || 0,
             originalPrice,
             discountPercentage,
@@ -210,10 +210,7 @@ export function useInventory() {
     [flagSaved]
   );
 
-  const setCategory = useCallback(
-    (id: string, category: Category) => patch(id, { category }),
-    [patch]
-  );
+
 
   const setClassification = useCallback(
     (id: string, material: Material, subcategory: string) => {
@@ -396,7 +393,6 @@ export function useInventory() {
         const newProduct: Product = {
           id: newId,
           name: nameFromFile(imageFiles[0].name),
-          category: 'Anillos',
           price: 0,
           detail: 'Plata 925 / Acero Quirúrgico',
           description: 'Añadir una descripción detallada...',
@@ -414,7 +410,7 @@ export function useInventory() {
           {
             id: newProduct.id,
             name: newProduct.name,
-            category: newProduct.category,
+            category: newProduct.subcategory || 'Accesorios',
             price: newProduct.price,
             detail: newProduct.detail,
             description: newProduct.description,
@@ -461,7 +457,6 @@ export function useInventory() {
         const newProduct: Product = {
           id: newId,
           name: data.name.trim() || 'Sin nombre',
-          category: data.category,
           price: Math.max(0, data.price),
           originalPrice: data.onSale ? data.originalPrice : undefined,
           discountPercentage: data.onSale ? data.discountPercentage : undefined,
@@ -482,7 +477,7 @@ export function useInventory() {
           {
             id: newProduct.id,
             name: newProduct.name,
-            category: newProduct.category,
+            category: newProduct.subcategory || 'Accesorios',
             price: newProduct.price,
             detail: newProduct.detail,
             description: descForDb,
@@ -517,7 +512,6 @@ export function useInventory() {
     setName,
     setPrice,
     setStock,
-    setCategory,
     setClassification,
     setDescription,
     setSale,

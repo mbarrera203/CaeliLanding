@@ -120,9 +120,7 @@ export function CategoryFilter({
             }`}
           >
             Todos
-            <span className={`ml-1.5 text-[11px] tabular-nums ${selectedMaterial === 'Todos' && !onlyOffers ? 'text-ivory/60' : 'text-muted/60'}`}>
-              {totalAll}
-            </span>
+
           </button>
 
           {/* Botón especial: 🔥 En Oferta */}
@@ -144,13 +142,7 @@ export function CategoryFilter({
           >
             <span>🔥</span>
             <span>En Oferta</span>
-            {offersCount > 0 && (
-              <span className={`ml-1 text-[11px] tabular-nums ${
-                onlyOffers ? 'text-ivory/60' : 'text-muted/60'
-              }`}>
-                {offersCount}
-              </span>
-            )}
+
           </button>
 
           {/* Pastillas de cada Material */}
@@ -174,9 +166,7 @@ export function CategoryFilter({
               >
                 {mat === 'Plata' && <span className="text-gold mr-1">✦</span>}
                 {mat}
-                <span className={`ml-1.5 text-[11px] tabular-nums ${isSelected ? 'text-ivory/60' : 'text-muted/60'}`}>
-                  {count}
-                </span>
+
               </button>
             );
           })}
@@ -202,11 +192,7 @@ export function CategoryFilter({
                   }`}
                 >
                   {label}
-                  {sub !== 'Todos' && count > 0 && (
-                    <span className={`ml-1 text-[10px] tabular-nums ${isSelected ? 'text-ivory/70' : 'text-muted/60'}`}>
-                      {count}
-                    </span>
-                  )}
+
                 </button>
               );
             })}
@@ -299,9 +285,7 @@ export function CategoryFilter({
                     className="font-bold text-[13px] tracking-wider text-ink uppercase hover:text-gold transition-colors text-left w-full cursor-pointer flex items-center justify-between group"
                   >
                     <span>PLATA</span>
-                    <span className="text-[10px] text-muted group-hover:text-gold">
-                      ({materialCounts['Plata'] || 0})
-                    </span>
+
                   </button>
                   <ul className="mt-3 space-y-2 text-[13px] text-muted">
                     {TIENDANUBE_TREE['Plata'].map((item) => (
@@ -330,9 +314,7 @@ export function CategoryFilter({
                     className="font-bold text-[13px] tracking-wider text-ink uppercase hover:text-gold transition-colors text-left w-full cursor-pointer flex items-center justify-between group"
                   >
                     <span>ACERO BLANCO</span>
-                    <span className="text-[10px] text-muted group-hover:text-gold">
-                      ({materialCounts['Acero Blanco'] || 0})
-                    </span>
+
                   </button>
                   <ul className="mt-3 space-y-2 text-[13px] text-muted">
                     {TIENDANUBE_TREE['Acero Blanco'].map((item) => (
@@ -361,9 +343,7 @@ export function CategoryFilter({
                     className="font-bold text-[13px] tracking-wider text-ink uppercase hover:text-gold transition-colors text-left w-full cursor-pointer flex items-center justify-between group"
                   >
                     <span>ACERO DORADO</span>
-                    <span className="text-[10px] text-muted group-hover:text-gold">
-                      ({materialCounts['Acero Dorado'] || 0})
-                    </span>
+
                   </button>
                   <ul className="mt-3 space-y-2 text-[13px] text-muted">
                     {TIENDANUBE_TREE['Acero Dorado'].map((item) => (
@@ -392,9 +372,7 @@ export function CategoryFilter({
                     className="font-bold text-[13px] tracking-wider text-ink uppercase hover:text-gold transition-colors text-left w-full cursor-pointer flex items-center justify-between group"
                   >
                     <span>COSITAS VARIAS :)</span>
-                    <span className="text-[10px] text-muted group-hover:text-gold">
-                      ({materialCounts['Cositas Varias :)'] || 0})
-                    </span>
+
                   </button>
                   <ul className="mt-3 space-y-2 text-[13px] text-muted">
                     {TIENDANUBE_TREE['Cositas Varias :)'].map((item) => (
@@ -423,9 +401,7 @@ export function CategoryFilter({
                     className="font-bold text-[13px] tracking-wider text-ink uppercase hover:text-gold transition-colors text-left w-full cursor-pointer flex items-center justify-between group"
                   >
                     <span>FANTASÍA</span>
-                    <span className="text-[10px] text-muted group-hover:text-gold">
-                      ({materialCounts['Fantasía'] || 0})
-                    </span>
+
                   </button>
                   <ul className="mt-3 space-y-2 text-[13px] text-muted">
                     {TIENDANUBE_TREE['Fantasía'].map((item) => (
@@ -455,9 +431,7 @@ export function CategoryFilter({
                       }`}
                     >
                       <span>COLLARES CRISTAL</span>
-                      <span className="text-[10px] text-muted group-hover:text-gold">
-                        ({materialCounts['Collares Cristal'] || 0})
-                      </span>
+
                     </button>
                   </div>
                 </div>
@@ -474,7 +448,7 @@ export function CategoryFilter({
                   }}
                   className="text-xs font-semibold text-ink hover:text-gold transition-colors underline cursor-pointer"
                 >
-                  Ver todos los productos ({totalAll})
+                  Ver todos los productos
                 </button>
               </div>
             </div>

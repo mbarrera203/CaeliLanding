@@ -54,7 +54,7 @@ export function getProductClassification(product: Product): Classification {
   }
 
   // 3. Inferencia inteligente a partir del nombre, detalle y categoría
-  const text = `${product.name} ${product.detail} ${product.category} ${product.description || ''}`.toLowerCase();
+  const text = `${product.name} ${product.detail} ${product.legacyCategory || ''} ${product.description || ''}`.toLowerCase();
 
   let material = 'Plata';
   if (text.includes('acero blanco') || text.includes('(ab)')) {

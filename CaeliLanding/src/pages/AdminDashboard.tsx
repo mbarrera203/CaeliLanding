@@ -17,7 +17,7 @@ export function AdminDashboard() {
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
+
   const [selectedMaterial, setSelectedMaterial] = useState<'Todos' | Material>('Todos');
   const [selectedSubcategory, setSelectedSubcategory] = useState<'Todos' | string>('Todos');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'out_of_stock'>('all');
@@ -45,7 +45,7 @@ export function AdminDashboard() {
     setName,
     setPrice,
     setStock,
-    setCategory,
+
     setClassification,
     setDescription,
     setSale,
@@ -99,15 +99,13 @@ export function AdminDashboard() {
   // Resetear página al filtrar
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategory, selectedMaterial, selectedSubcategory, statusFilter]);
+  }, [searchQuery, selectedMaterial, selectedSubcategory, statusFilter]);
 
   // Filtrado de productos
   const filteredItems = useMemo(() => {
     let result = items;
 
-    if (selectedCategory !== 'Todas') {
-      result = result.filter((item) => item.category === selectedCategory);
-    }
+
 
     if (selectedMaterial !== 'Todos') {
       result = result.filter((item) => {
@@ -156,7 +154,7 @@ export function AdminDashboard() {
     }
 
     return result;
-  }, [items, selectedCategory, selectedMaterial, selectedSubcategory, statusFilter, searchQuery]);
+  }, [items, selectedMaterial, selectedSubcategory, statusFilter, searchQuery]);
 
   // Paginación
   const totalPages = Math.ceil(filteredItems.length / pageSize) || 1;
@@ -169,12 +167,12 @@ export function AdminDashboard() {
     searchQuery ||
     selectedMaterial !== 'Todos' ||
     selectedSubcategory !== 'Todos' ||
-    selectedCategory !== 'Todas' ||
+
     statusFilter !== 'all';
 
   const clearFilters = () => {
     setSearchQuery('');
-    setSelectedCategory('Todas');
+
     setSelectedMaterial('Todos');
     setSelectedSubcategory('Todos');
     setStatusFilter('all');
@@ -493,7 +491,7 @@ export function AdminDashboard() {
                 onName={setName}
                 onPrice={setPrice}
                 onStock={setStock}
-                onCategory={setCategory}
+
                 onClassification={setClassification}
                 onSale={setSale}
                 onToggle={toggleActive}
