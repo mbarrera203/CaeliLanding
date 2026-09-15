@@ -14,6 +14,7 @@ import { Category, Material, Product } from '../types/product';
 import { getProductClassification, normalizeSubcategory } from '../utils/productClassification';
 import { WHATSAPP_DISPLAY, whatsappLink } from '../utils/whatsapp';
 import { supabase } from '../lib/supabase';
+import { parseSaleInfo } from '../utils/saleUtils';
 
 interface StorefrontProps {
   actionStyle: CardActionStyle;
@@ -25,6 +26,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
   const [selectedMaterial, setSelectedMaterial] = useState<'Todos' | Material>('Todos');
   const [selectedSubcategory, setSelectedSubcategory] = useState<'Todos' | string>('Todos');
   const [searchQuery, setSearchQuery] = useState('');
+  const [onlyOffers, setOnlyOffers] = useState(false);
 
   useEffect(() => {
     async function loadStoreCatalog() {
@@ -36,18 +38,30 @@ export function Storefront({ actionStyle }: StorefrontProps) {
           .order('created_at', { ascending: false });
 
         if (!error && data && data.length > 0) {
-          const liveProducts: Product[] = data.map((row: any) => ({
-            id: String(row.id),
-            name: row.name,
-            category: row.category as Category,
-            price: Number(row.price),
-            detail: row.detail || '',
-            description: row.description || '',
-            images: Array.isArray(row.images) && row.images.length > 0 ? row.images : ['/LogoCaeli-removebg-preview.png'],
-            stock: Number(row.stock),
-            active: Boolean(row.active),
-            featured: Boolean(row.featured),
-          }));
+          const liveProducts: Product[] = data.map((row: any) => {
+            const { onSale, originalPrice, discountPercentage, cleanDescription } = parseSaleInfo(row.description, Number(row.price));
+            const rawProduct: Product = {
+              id: String(row.id),
+              name: row.name,
+              category: row.category as Category,
+              price: Number(row.price),
+              originalPrice,
+              discountPercentage,
+              onSale,
+              detail: row.detail || '',
+              description: cleanDescription,
+              images: Array.isArray(row.images) && row.images.length > 0 ? row.images : ['/LogoCaeli-removebg-preview.png'],
+              stock: Number(row.stock),
+              active: Boolean(row.active),
+              featured: Boolean(row.featured),
+            };
+            const classification = getProductClassification(rawProduct);
+            return {
+              ...rawProduct,
+              material: classification.material,
+              subcategory: classification.subcategory,
+            };
+          });
           setCatalog(liveProducts);
         }
       } catch (err) {
@@ -81,9 +95,19 @@ export function Storefront({ actionStyle }: StorefrontProps) {
     return { materialCounts: matCounts, subcategoryCounts: subCounts };
   }, [catalog, selectedMaterial]);
 
+  // Conteo de productos en oferta disponibles
+  const offersCount = useMemo(() => {
+    return catalog.filter((p) => p.onSale && p.active && p.stock > 0).length;
+  }, [catalog]);
+
   // Productos filtrados y ordenados
   const visible = useMemo(() => {
     let filtered = catalog;
+
+    // 0. Filtro por ofertas
+    if (onlyOffers) {
+      filtered = filtered.filter((p) => p.onSale);
+    }
 
     // 1. Filtro por material
     if (selectedMaterial !== 'Todos') {
@@ -135,7 +159,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
       }
       return 0;
     });
-  }, [catalog, selectedMaterial, selectedSubcategory, searchQuery]);
+  }, [catalog, selectedMaterial, selectedSubcategory, searchQuery, onlyOffers]);
 
 
 
@@ -234,6 +258,9 @@ export function Storefront({ actionStyle }: StorefrontProps) {
           selectedMaterial={selectedMaterial}
           selectedSubcategory={selectedSubcategory}
           searchQuery={searchQuery}
+          onlyOffers={onlyOffers}
+          offersCount={offersCount}
+          onToggleOffers={setOnlyOffers}
           onSelectMaterial={setSelectedMaterial}
           onSelectSubcategory={setSelectedSubcategory}
           onSearchChange={setSearchQuery}
@@ -241,6 +268,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
             setSelectedMaterial('Todos');
             setSelectedSubcategory('Todos');
             setSearchQuery('');
+            setOnlyOffers(false);
           }}
           materialCounts={materialCounts}
           subcategoryCounts={subcategoryCounts}

@@ -10,8 +10,13 @@ export function whatsappLink(message: string): string {
 }
 
 export function orderLink(product: Product): string {
+  const priceText =
+    product.onSale && product.originalPrice && product.originalPrice > product.price
+      ? `${formatPrice(product.price)} (¡en oferta, precio regular ${formatPrice(product.originalPrice)}!)`
+      : formatPrice(product.price);
+
   return whatsappLink(
-    `¡Hola Caeli! Me gustaría consultar y pedir el/la ${product.name} (${formatPrice(product.price)}). ¿Tienen stock disponible?`
+    `¡Hola Caeli! Me gustaría consultar y pedir el/la ${product.name} (${priceText}). ¿Tienen stock disponible?`
   );
 }
 

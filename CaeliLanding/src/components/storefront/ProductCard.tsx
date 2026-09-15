@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon, X } from 'lucide-react';
 import { WhatsAppIcon } from '../icons/WhatsAppIcon';
 import { Product } from '../../types/product';
 import { formatPrice, orderLink } from '../../utils/whatsapp';
@@ -14,6 +15,70 @@ interface ProductCardProps {
   featured?: boolean;
 }
 
+function ImageModal({ images, initialIndex, onClose }: { images: string[], initialIndex: number, onClose: () => void }) {
+  const [index, setIndex] = useState(initialIndex);
+  
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
+
+  const next = (e: React.MouseEvent) => { e.stopPropagation(); setIndex((prev) => (prev + 1) % images.length); };
+  const prev = (e: React.MouseEvent) => { e.stopPropagation(); setIndex((prev) => (prev - 1 + images.length) % images.length); };
+
+  return createPortal(
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-ivory/80 backdrop-blur-md p-4 sm:p-8 select-none touch-none"
+      onClick={onClose}
+    >
+      <button onClick={onClose} className="absolute top-4 right-4 sm:top-6 sm:right-6 text-ink/70 hover:text-ink z-50 p-2 rounded-full bg-white/50 hover:bg-white/80 transition-colors shadow-sm">
+        <X className="w-6 h-6 sm:w-8 sm:h-8" />
+      </button>
+
+      {images.length > 1 && (
+        <button onClick={prev} className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 text-ink/70 hover:text-ink p-2 sm:p-3 z-50 rounded-full bg-white/50 hover:bg-white/80 transition-colors shadow-sm">
+          <ChevronLeftIcon className="w-8 h-8 sm:w-10 sm:h-10" />
+        </button>
+      )}
+
+      {images.length > 1 && (
+        <button onClick={next} className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 text-ink/70 hover:text-ink p-2 sm:p-3 z-50 rounded-full bg-white/50 hover:bg-white/80 transition-colors shadow-sm">
+          <ChevronRightIcon className="w-8 h-8 sm:w-10 sm:h-10" />
+        </button>
+      )}
+
+      <AnimatePresence mode="wait">
+        <motion.img
+          key={index}
+          src={images[index]}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.2 }}
+          className="max-w-full max-h-[85vh] sm:max-h-[90vh] object-contain rounded-xl shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </AnimatePresence>
+
+      {images.length > 1 && (
+         <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2 z-50">
+           {images.map((_, i) => (
+             <button
+               key={i}
+               onClick={(e) => { e.stopPropagation(); setIndex(i); }}
+               className={['h-1.5 rounded-full transition-all duration-300', i === index ? 'w-6 bg-ink' : 'w-2 bg-ink/30 hover:bg-ink/50'].join(' ')}
+             />
+           ))}
+         </div>
+      )}
+    </motion.div>,
+    document.body
+  );
+}
+
 export function ProductCard({
   product,
   index,
@@ -21,6 +86,7 @@ export function ProductCard({
   featured = false,
 }: ProductCardProps) {
   const [imgIndex, setImgIndex] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const soldOut = !product.active || product.stock === 0;
   const hasMultipleImages = product.images && product.images.length > 1;
 
@@ -37,18 +103,22 @@ export function ProductCard({
   };
 
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.4,
-        ease: [0.23, 1, 0.32, 1],
-        delay: Math.min(index, 7) * 0.05,
-      }}
-      className="group relative flex flex-col h-full bg-white rounded-2xl shadow-sm hover:shadow-card-hover transition-shadow duration-500 overflow-hidden"
-    >
-      {/* Contenedor de Imagen y Efecto Hover */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-sand">
+    <>
+      <motion.article
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: 0.4,
+          ease: [0.23, 1, 0.32, 1],
+          delay: Math.min(index, 7) * 0.05,
+        }}
+        className="group relative flex flex-col h-full bg-white rounded-2xl shadow-sm hover:shadow-card-hover transition-shadow duration-500 overflow-hidden"
+      >
+        {/* Contenedor de Imagen y Efecto Hover */}
+        <div 
+          className="relative aspect-[4/5] w-full overflow-hidden bg-sand cursor-pointer"
+          onClick={() => setIsModalOpen(true)}
+        >
         {/* Carrusel Interno (Efecto de subida en hover) */}
         <div className="absolute inset-0 h-full w-full transition-transform duration-500 ease-soft group-hover:-translate-y-8">
           <AnimatePresence initial={false}>
@@ -136,11 +206,19 @@ export function ProductCard({
         </div>
 
         {/* Badges superiores (Fijos) */}
-        {featured && (
-          <span className="absolute left-3 top-3 rounded-full bg-gold/90 px-3 py-1 text-[11px] font-medium text-ivory backdrop-blur-sm z-10 shadow-sm">
-            ✦ Esta semana
-          </span>
-        )}
+        <div className="absolute left-3 top-3 z-10 flex flex-col gap-1 items-start">
+          {product.onSale && (
+            <span className="rounded-full bg-rose-600/95 px-2.5 py-1 text-[11px] font-bold tracking-tight text-white backdrop-blur-sm shadow-sm flex items-center gap-1">
+              <span>🔥</span>
+              <span>{product.discountPercentage ? `-${product.discountPercentage}% OFF` : 'OFERTA'}</span>
+            </span>
+          )}
+          {featured && !product.onSale && (
+            <span className="rounded-full bg-gold/90 px-3 py-1 text-[11px] font-medium text-ivory backdrop-blur-sm shadow-sm">
+              ✦ Esta semana
+            </span>
+          )}
+        </div>
 
         {soldOut && (
           <span className="absolute right-3 top-3 rounded-full bg-ivory/95 px-3 py-1 text-[11px] text-muted backdrop-blur-sm z-10 shadow-sm">
@@ -148,8 +226,8 @@ export function ProductCard({
           </span>
         )}
 
-        {!soldOut && product.stock <= 3 && !featured && (
-          <span className="absolute right-3 top-3 rounded-full bg-rose/90 px-3 py-1 text-[11px] font-medium text-ivory backdrop-blur-sm z-10 shadow-sm">
+        {!soldOut && product.stock <= 3 && !featured && !product.onSale && (
+          <span className="absolute right-3 top-3 rounded-full bg-dusty-rose/90 px-3 py-1 text-[11px] font-medium text-ivory backdrop-blur-sm z-10 shadow-sm">
             {product.stock === 1 ? '¡Última unidad!' : `¡Últimas ${product.stock}!`}
           </span>
         )}
@@ -166,11 +244,35 @@ export function ProductCard({
               {product.detail}
             </p>
           </div>
-          <span className="shrink-0 tabular-nums font-medium text-[15px] text-gold-dark mt-0.5">
-            {formatPrice(product.price)}
-          </span>
+          <div className="shrink-0 flex flex-col items-end">
+            {product.onSale && product.originalPrice && product.originalPrice > product.price ? (
+              <>
+                <span className="text-[12px] line-through text-stone-400 tabular-nums leading-none">
+                  {formatPrice(product.originalPrice)}
+                </span>
+                <span className="tabular-nums font-bold text-[16px] text-rose-700 leading-tight mt-0.5">
+                  {formatPrice(product.price)}
+                </span>
+              </>
+            ) : (
+              <span className="shrink-0 tabular-nums font-medium text-[15px] text-gold-dark mt-0.5">
+                {formatPrice(product.price)}
+              </span>
+            )}
+          </div>
         </div>
       </div>
-    </motion.article>
+      </motion.article>
+
+      <AnimatePresence>
+        {isModalOpen && (
+          <ImageModal
+            images={product.images}
+            initialIndex={imgIndex}
+            onClose={() => setIsModalOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 }

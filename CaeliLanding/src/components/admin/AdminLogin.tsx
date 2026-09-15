@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Lock, Mail, Eye, EyeOff, ArrowLeft, Loader2, Sparkles } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
 
 interface AdminLoginProps {
   onLogin: (email: string, pass: string) => Promise<unknown>;

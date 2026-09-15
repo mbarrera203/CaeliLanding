@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import { Category, Product } from '../types/product';
 import tiendanubeImageMap from '../data/tiendanubeImages.json';
+import { formatDescriptionWithSale } from './saleUtils';
 
 // Normaliza texto eliminando acentos y minúsculas
 function normalize(str: string): string {
@@ -171,6 +172,9 @@ export async function parseTiendaNubeCsv(file: File): Promise<TiendaNubeProductR
             name: string;
             category: Category;
             price: number;
+            originalPrice?: number;
+            discountPercentage?: number;
+            onSale?: boolean;
             detail: string;
             description: string;
             images: Set<string>;
@@ -244,7 +248,14 @@ export async function parseTiendaNubeCsv(file: File): Promise<TiendaNubeProductR
 
             if (!productMap.has(groupKey)) {
               const category = matchCategory(rawCategory, name);
-              const price = parsePrice(rawPrice);
+              const promoPrice = parsePrice(row['Precio promocional']);
+              const listPrice = parsePrice(row['Precio'] || row['Precio de lista']);
+              const hasPromo = promoPrice > 0 && listPrice > promoPrice;
+              const price = hasPromo ? promoPrice : (listPrice || promoPrice || parsePrice(rawPrice));
+              const originalPrice = hasPromo ? listPrice : undefined;
+              const discountPercentage = hasPromo ? Math.round(((listPrice - promoPrice) / listPrice) * 100) : undefined;
+              const onSale = hasPromo;
+
               const detail = extractDetail(name, tags, cleanDesc);
 
               // ID limpio y compatible con URLs
@@ -256,6 +267,9 @@ export async function parseTiendaNubeCsv(file: File): Promise<TiendaNubeProductR
                 .replace(/^-+|-+$/g, '') || `prod-${Date.now()}`;
 
               const cleanDescFinal = cleanDesc.replace(/https?:\/\/photos\.google\.com[^\s"']*/gi, '').trim();
+              const finalDesc = hasPromo
+                ? formatDescriptionWithSale(cleanDescFinal || 'Joya en plata 925 y acero quirúrgico.', true, listPrice, discountPercentage)
+                : (cleanDescFinal || 'Joya en plata 925 y acero quirúrgico.');
 
               // Buscar imágenes de alta resolución en el mapa de TiendaNube por slug
               const sitemapImages = (tiendanubeImageMap as Record<string, string[]>)[slug] ||
@@ -272,8 +286,11 @@ export async function parseTiendaNubeCsv(file: File): Promise<TiendaNubeProductR
                 name: name || 'Accesorio Caeli',
                 category,
                 price,
+                originalPrice,
+                discountPercentage,
+                onSale,
                 detail,
-                description: cleanDescFinal || 'Joya en plata 925 y acero quirúrgico.',
+                description: finalDesc,
                 images: initialImages,
                 stock: stockNum,
                 active,
@@ -315,6 +332,9 @@ export async function parseTiendaNubeCsv(file: File): Promise<TiendaNubeProductR
               name: p.name,
               category: p.category,
               price: p.price,
+              originalPrice: (p as any).originalPrice,
+              discountPercentage: (p as any).discountPercentage,
+              onSale: (p as any).onSale,
               detail: p.detail,
               description: p.description,
               images: imageArray.length > 0 ? imageArray : ['/LogoCaeli.png'],

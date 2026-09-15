@@ -40,6 +40,12 @@ export interface Product {
   material?: string;
   subcategory?: string;
   price: number;
+  /** Precio original de lista antes del descuento (cuando está en oferta) */
+  originalPrice?: number;
+  /** Porcentaje de descuento (ej: 20 para 20% OFF) */
+  discountPercentage?: number;
+  /** Si el producto tiene una oferta promocional activa */
+  onSale?: boolean;
   /** Línea corta de material / detalle que se muestra bajo el nombre del producto. */
   detail: string;
   /** Descripción más larga del producto, visible al hacer hover en la tarjeta. */

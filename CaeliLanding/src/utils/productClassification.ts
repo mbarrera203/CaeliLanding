@@ -1,4 +1,4 @@
-import { Product, Material } from '../types/product';
+import { Product, Material, MATERIALS, TIENDANUBE_TREE } from '../types/product';
 import tiendanubeCategories from '../data/tiendanubeCategories.json';
 
 const categoryMap = tiendanubeCategories as Record<
@@ -20,6 +20,31 @@ export function getProductClassification(product: Product): Classification {
       subcategory: product.subcategory,
       fullCategory: `${product.material} > ${product.subcategory}`,
     };
+  }
+  if (product.material) {
+    const sub = product.subcategory || (TIENDANUBE_TREE[product.material as Material]?.[0] || 'Accesorios');
+    return {
+      material: product.material,
+      subcategory: sub,
+      fullCategory: `${product.material} > ${sub}`,
+    };
+  }
+
+  // 1b. Si en detail viene un formato de material explícito guardado (ej: "Acero Dorado · Collares y cadenas" o "Plata · Pulseras")
+  if (product.detail) {
+    for (const mat of MATERIALS) {
+      if (product.detail.startsWith(mat)) {
+        const rest = product.detail.slice(mat.length).replace(/^[·\/:>\s-]+/, '').trim();
+        const availableSubs = TIENDANUBE_TREE[mat] || [];
+        const matchedSub = availableSubs.find((s: string) => s.toLowerCase() === rest.toLowerCase()) || rest;
+        const subcategory = matchedSub || (availableSubs[0] || 'Accesorios');
+        return {
+          material: mat,
+          subcategory,
+          fullCategory: `${mat} > ${subcategory}`,
+        };
+      }
+    }
   }
 
   // 2. Buscar en el mapa pregenerado de TiendaNube por ID / slug

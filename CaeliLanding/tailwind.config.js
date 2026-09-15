@@ -20,7 +20,7 @@ export default {
           pale: '#F5EDD8',
         },
         champagne: '#EDD9A3',
-        rose: '#D4A09A',
+        'dusty-rose': '#D4A09A',
         whatsapp: {
           DEFAULT: '#4E876A', // Softer, elegant green
           deep: '#3A6850',

@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { Material, MATERIALS, TIENDANUBE_TREE } from '../../types/product';
-import { ChevronDown, ChevronUp, Search, X, Sparkles, LayoutGrid, Check } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, X, LayoutGrid } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export interface CategoryFilterProps {
   selectedMaterial: 'Todos' | Material;
   selectedSubcategory: 'Todos' | string;
   searchQuery: string;
+  onlyOffers?: boolean;
+  offersCount?: number;
+  onToggleOffers?: (val: boolean) => void;
   onSelectMaterial: (material: 'Todos' | Material) => void;
   onSelectSubcategory: (subcategory: 'Todos' | string) => void;
   onSearchChange: (query: string) => void;
@@ -21,6 +24,9 @@ export function CategoryFilter({
   selectedMaterial,
   selectedSubcategory,
   searchQuery,
+  onlyOffers = false,
+  offersCount = 0,
+  onToggleOffers,
   onSelectMaterial,
   onSelectSubcategory,
   onSearchChange,
@@ -39,7 +45,7 @@ export function CategoryFilter({
       : ['Todos', ...(TIENDANUBE_TREE[selectedMaterial] || [])];
 
   const hasActiveFilters =
-    selectedMaterial !== 'Todos' || selectedSubcategory !== 'Todos' || searchQuery.trim() !== '';
+    selectedMaterial !== 'Todos' || selectedSubcategory !== 'Todos' || searchQuery.trim() !== '' || onlyOffers;
 
   const handleMegaMenuSelect = (mat: Material, sub?: string) => {
     onSelectMaterial(mat);
@@ -103,30 +109,60 @@ export function CategoryFilter({
           <button
             type="button"
             onClick={() => {
+              onToggleOffers?.(false);
               onSelectMaterial('Todos');
               onSelectSubcategory('Todos');
             }}
             className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[13px] font-medium transition-all duration-200 cursor-pointer ${
-              selectedMaterial === 'Todos'
+              selectedMaterial === 'Todos' && !onlyOffers
                 ? 'bg-ink text-ivory shadow-sm'
                 : 'bg-sand text-muted hover:bg-stone-200/70 hover:text-ink'
             }`}
           >
             Todos
-            <span className={`ml-1.5 text-[11px] tabular-nums ${selectedMaterial === 'Todos' ? 'text-ivory/60' : 'text-muted/60'}`}>
+            <span className={`ml-1.5 text-[11px] tabular-nums ${selectedMaterial === 'Todos' && !onlyOffers ? 'text-ivory/60' : 'text-muted/60'}`}>
               {totalAll}
             </span>
           </button>
 
+          {/* Botón especial: 🔥 En Oferta */}
+          <button
+            type="button"
+            onClick={() => {
+              const next = !onlyOffers;
+              onToggleOffers?.(next);
+              if (next) {
+                onSelectMaterial('Todos');
+                onSelectSubcategory('Todos');
+              }
+            }}
+            className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[13px] font-medium transition-all duration-200 cursor-pointer flex items-center gap-1 ${
+              onlyOffers
+                ? 'bg-ink text-ivory shadow-sm'
+                : 'bg-sand text-muted hover:bg-stone-200/70 hover:text-ink'
+            }`}
+          >
+            <span>🔥</span>
+            <span>En Oferta</span>
+            {offersCount > 0 && (
+              <span className={`ml-1 text-[11px] tabular-nums ${
+                onlyOffers ? 'text-ivory/60' : 'text-muted/60'
+              }`}>
+                {offersCount}
+              </span>
+            )}
+          </button>
+
           {/* Pastillas de cada Material */}
           {MATERIALS.map((mat) => {
-            const isSelected = selectedMaterial === mat;
+            const isSelected = selectedMaterial === mat && !onlyOffers;
             const count = materialCounts[mat] || 0;
             return (
               <button
                 key={mat}
                 type="button"
                 onClick={() => {
+                  onToggleOffers?.(false);
                   onSelectMaterial(mat);
                   onSelectSubcategory('Todos');
                 }}
@@ -182,6 +218,18 @@ export function CategoryFilter({
           <div className="mt-2.5 flex items-center justify-between border-t border-line/40 pt-2 text-xs text-muted">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="font-medium text-ink">Filtrando:</span>
+              {onlyOffers && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-rose-100 px-2 py-0.5 font-semibold text-rose-800 border border-rose-200">
+                  🔥 Solo Ofertas
+                  <button
+                    type="button"
+                    onClick={() => onToggleOffers?.(false)}
+                    className="hover:text-rose-950 ml-0.5 text-[11px]"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
               {selectedMaterial !== 'Todos' && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-stone-100 px-2 py-0.5 font-medium text-stone-700">
                   {selectedMaterial}

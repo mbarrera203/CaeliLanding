@@ -4,15 +4,17 @@ import { UploadZone } from '../components/admin/UploadZone';
 import { InventoryTable } from '../components/admin/InventoryTable';
 import { AdminLogin } from '../components/admin/AdminLogin';
 import { TiendaNubeImportModal } from '../components/admin/TiendaNubeImportModal';
+import { AddProductModal } from '../components/admin/AddProductModal';
 import { useInventory } from '../hooks/useInventory';
 import { useAuth } from '../hooks/useAuth';
-import { CATEGORIES, Material, MATERIALS, TIENDANUBE_TREE } from '../types/product';
+import { Material, MATERIALS, TIENDANUBE_TREE } from '../types/product';
 import { getProductClassification, normalizeSubcategory } from '../utils/productClassification';
-import { Loader2, CloudUpload, Database, FileSpreadsheet, Search, X } from 'lucide-react';
+import { Loader2, CloudUpload, Database, FileSpreadsheet, Search, X, SlidersHorizontal, PackagePlus } from 'lucide-react';
 
 export function AdminDashboard() {
   const { user, loading: authLoading, isAuthenticated, signIn, signOut } = useAuth();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
@@ -20,6 +22,7 @@ export function AdminDashboard() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<'Todos' | string>('Todos');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'out_of_stock'>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
   const pageSize = 50;
 
   const handleLogout = async () => {
@@ -43,10 +46,13 @@ export function AdminDashboard() {
     setPrice,
     setStock,
     setCategory,
+    setClassification,
     setDescription,
+    setSale,
     toggleActive,
     remove,
     addFiles,
+    addProduct,
     addImagesToProduct,
     removeImageFromProduct,
     refresh,
@@ -99,12 +105,10 @@ export function AdminDashboard() {
   const filteredItems = useMemo(() => {
     let result = items;
 
-    // Filtro de categoría general
     if (selectedCategory !== 'Todas') {
       result = result.filter((item) => item.category === selectedCategory);
     }
 
-    // Filtro de Material (TiendaNube)
     if (selectedMaterial !== 'Todos') {
       result = result.filter((item) => {
         const { material } = getProductClassification(item);
@@ -112,7 +116,6 @@ export function AdminDashboard() {
       });
     }
 
-    // Filtro de Subcategoría (TiendaNube)
     if (selectedSubcategory !== 'Todos') {
       result = result.filter((item) => {
         const { subcategory } = getProductClassification(item);
@@ -120,14 +123,12 @@ export function AdminDashboard() {
       });
     }
 
-    // Filtro de estado
     if (statusFilter === 'active') {
       result = result.filter((item) => item.active && item.stock > 0);
     } else if (statusFilter === 'out_of_stock') {
       result = result.filter((item) => !item.active || item.stock === 0);
     }
 
-    // Búsqueda por texto (nombre, detalle, descripción)
     if (searchQuery.trim()) {
       const q = searchQuery
         .toLowerCase()
@@ -164,7 +165,21 @@ export function AdminDashboard() {
     return filteredItems.slice(start, start + pageSize);
   }, [filteredItems, currentPage, pageSize]);
 
-  // Si está verificando la sesión inicial
+  const hasActiveFilters =
+    searchQuery ||
+    selectedMaterial !== 'Todos' ||
+    selectedSubcategory !== 'Todos' ||
+    selectedCategory !== 'Todas' ||
+    statusFilter !== 'all';
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('Todas');
+    setSelectedMaterial('Todos');
+    setSelectedSubcategory('Todos');
+    setStatusFilter('all');
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen w-full bg-ivory flex items-center justify-center">
@@ -176,11 +191,9 @@ export function AdminDashboard() {
     );
   }
 
-  // Si no está autenticado, mostrar la pantalla de Login
   if (!isAuthenticated) {
     return <AdminLogin onLogin={(email, pass) => signIn(email, pass)} />;
   }
-
 
   const liveCount = items.filter((item) => item.active && item.stock > 0).length;
   const outOfStock = items.length - liveCount;
@@ -195,18 +208,19 @@ export function AdminDashboard() {
 
       {/* Notificación flotante de subida a la nube */}
       {isUploading && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-stone-900 px-4 py-3 text-xs text-white shadow-xl animate-fade-in">
-          <CloudUpload className="h-4 w-4 animate-bounce text-amber-400" />
+        <div className="fixed bottom-6 right-4 sm:right-6 z-50 flex items-center gap-2 rounded-xl bg-stone-900 px-4 py-3 text-xs text-white shadow-xl animate-fade-in max-w-[calc(100vw-2rem)]">
+          <CloudUpload className="h-4 w-4 animate-bounce text-amber-400 shrink-0" />
           <span>Sincronizando fotos y cambios con la nube...</span>
         </div>
       )}
 
-      <main className="mx-auto max-w-[1180px] px-8 pb-24 pt-10">
-        {/* Aviso si la base de datos está vacía para sincronizar el catálogo existente */}
+      <main className="mx-auto max-w-[1180px] px-4 sm:px-8 pb-24 pt-4 sm:pt-6">
+
+        {/* Aviso base de datos vacía */}
         {isEmptyDb && (
-          <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50/80 p-5 shadow-sm">
+          <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 sm:p-5 shadow-sm">
             <div className="flex items-center gap-3.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
                 <Database className="h-5 w-5" />
               </div>
               <div>
@@ -214,7 +228,7 @@ export function AdminDashboard() {
                   Tu base de datos está lista
                 </h2>
                 <p className="text-xs text-amber-800/80 mt-0.5">
-                  Podés importar todos tus productos desde el archivo exportado de TiendaNube (.csv) o arrastrar fotos arriba.
+                  Podés importar productos desde TiendaNube (.csv) o agregar uno nuevo.
                 </p>
               </div>
             </div>
@@ -227,26 +241,57 @@ export function AdminDashboard() {
           </div>
         )}
 
-        <UploadZone onFiles={addFiles} />
+        {/* Upload Zone — solo visible en desktop como zona secundaria */}
+        <div className="hidden md:block">
+          <UploadZone onFiles={addFiles} />
+        </div>
 
-        <div className="mt-12 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
+        {/* Upload Zone — collapsable en mobile */}
+        <details className="md:hidden group">
+          <summary className="flex items-center justify-between cursor-pointer rounded-xl border border-dashed border-line bg-sand/30 px-4 py-3 text-sm font-medium text-muted hover:text-ink list-none">
+            <span className="flex items-center gap-2">
+              <PackagePlus className="h-4 w-4" />
+              Subir fotos (drag &amp; drop)
+            </span>
+            <span className="text-xs text-muted group-open:rotate-180 transition-transform">▾</span>
+          </summary>
+          <div className="mt-2">
+            <UploadZone onFiles={addFiles} />
+          </div>
+        </details>
+
+        {/* Título + acciones */}
+        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
           <div>
-            <h1 className="font-serif text-2xl font-medium tracking-tight text-ink">
+            <h1 className="font-serif text-xl sm:text-2xl font-medium tracking-tight text-ink">
               Tus productos
             </h1>
-            <p className="mt-1.5 text-[13px] text-muted">
-              Haz clic en cualquier precio o cantidad para editarlo — los cambios se guardan solos en Supabase.
+            <p className="mt-1 text-[12px] sm:text-[13px] text-muted">
+              Tocá cualquier precio o cantidad para editarlo — los cambios se guardan solos.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+
+          {/* Botones de acción */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            {/* Botón principal: Agregar producto */}
+            <button
+              onClick={() => setIsAddProductModalOpen(true)}
+              className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full bg-amber-700 px-5 py-2.5 sm:py-2 text-[13px] font-medium text-white shadow-sm hover:bg-amber-800 transition-colors cursor-pointer active:scale-98"
+            >
+              <PackagePlus className="h-4 w-4" />
+              <span>Agregar producto</span>
+            </button>
+
             <button
               onClick={() => setIsImportModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50/90 px-4 py-2 text-[12px] font-medium text-amber-900 shadow-sm hover:bg-amber-100 hover:border-amber-400 transition-all cursor-pointer"
+              className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full border border-amber-300 bg-amber-50/90 px-5 py-2.5 sm:py-2 text-[13px] font-medium text-amber-900 shadow-sm hover:bg-amber-100 hover:border-amber-400 transition-all cursor-pointer active:scale-98"
             >
               <FileSpreadsheet className="h-4 w-4 text-amber-700" />
-              <span>Importar desde TiendaNube (.csv)</span>
+              <span className="hidden sm:inline">Importar desde TiendaNube (.csv)</span>
+              <span className="sm:hidden">Importar CSV</span>
             </button>
-            <p className="shrink-0 text-[13px] tabular-nums text-muted">
+
+            <p className="shrink-0 text-center sm:text-left text-[12px] sm:text-[13px] tabular-nums text-muted pt-1 sm:pt-0">
               <span className="text-ink font-medium">{liveCount} activos</span> ·{' '}
               {outOfStock} sin stock
             </p>
@@ -254,16 +299,17 @@ export function AdminDashboard() {
         </div>
 
         {/* Barra de Búsqueda y Filtros */}
-        <div className="mt-6 rounded-2xl border border-line bg-white p-4 shadow-sm space-y-3">
-          <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
-            {/* Buscador */}
-            <div className="relative flex-1 min-w-[220px]">
+        <div className="mt-4 sm:mt-6 rounded-2xl border border-line bg-white p-3 sm:p-4 shadow-sm space-y-3">
+
+          {/* Fila superior: buscador + botón filtros (mobile) */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar por nombre, detalle o descripción..."
+                placeholder="Buscar por nombre, detalle..."
                 className="w-full pl-10 pr-10 py-2 text-sm bg-sand/40 border border-line rounded-xl text-ink placeholder:text-muted focus:outline-none focus:border-ink/40 focus:bg-white transition-all"
               />
               {searchQuery && (
@@ -278,73 +324,104 @@ export function AdminDashboard() {
               )}
             </div>
 
-            {/* Selectores */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              {/* Selector de Material (TiendaNube) */}
-              <div className="flex items-center gap-1.5">
-                <label className="text-xs text-muted font-medium shrink-0">Material:</label>
-                <select
-                  value={selectedMaterial}
-                  onChange={(e) => {
-                    setSelectedMaterial(e.target.value as any);
-                    setSelectedSubcategory('Todos');
-                  }}
-                  className="text-xs bg-sand/40 border border-line rounded-xl px-3 py-2 text-ink font-medium focus:outline-none focus:border-ink/40 cursor-pointer"
-                >
-                  <option value="Todos">Todos ({items.length})</option>
-                  {MATERIALS.map((mat) => {
-                    const count = items.filter((i) => getProductClassification(i).material === mat).length;
-                    return (
-                      <option key={mat} value={mat}>
-                        {mat} ({count})
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              {/* Selector de Subcategoría / Tipo */}
-              <div className="flex items-center gap-1.5">
-                <label className="text-xs text-muted font-medium shrink-0">Tipo:</label>
-                <select
-                  value={selectedSubcategory}
-                  onChange={(e) => setSelectedSubcategory(e.target.value)}
-                  className="text-xs bg-sand/40 border border-line rounded-xl px-3 py-2 text-ink font-medium focus:outline-none focus:border-ink/40 cursor-pointer"
-                >
-                  <option value="Todos">Todos</option>
-                  {availableSubcategories.map((sub) => {
-                    const count = items.filter((i) => {
-                      const c = getProductClassification(i);
-                      if (selectedMaterial !== 'Todos' && c.material !== selectedMaterial) return false;
-                      return normalizeSubcategory(c.subcategory) === normalizeSubcategory(sub);
-                    }).length;
-                    return (
-                      <option key={sub} value={sub}>
-                        {sub} ({count})
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              {/* Selector de Estado */}
-              <div className="flex items-center gap-1.5">
-                <label className="text-xs text-muted font-medium shrink-0">Estado:</label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="text-xs bg-sand/40 border border-line rounded-xl px-3 py-2 text-ink font-medium focus:outline-none focus:border-ink/40 cursor-pointer"
-                >
-                  <option value="all">Todos ({items.length})</option>
-                  <option value="active">Activos ({liveCount})</option>
-                  <option value="out_of_stock">Sin stock ({outOfStock})</option>
-                </select>
-              </div>
-            </div>
+            {/* Botón filtros en mobile */}
+            <button
+              type="button"
+              onClick={() => setShowFilters((v) => !v)}
+              className={[
+                'md:hidden inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-colors shrink-0',
+                showFilters || hasActiveFilters
+                  ? 'border-amber-400 bg-amber-50 text-amber-900'
+                  : 'border-line bg-sand/40 text-muted hover:text-ink',
+              ].join(' ')}
+              aria-expanded={showFilters}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              <span>Filtros</span>
+              {hasActiveFilters && (
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
+                  !
+                </span>
+              )}
+            </button>
           </div>
 
-          {/* Resumen de filtros activos si se ha aplicado alguno */}
-          {(searchQuery || selectedMaterial !== 'Todos' || selectedSubcategory !== 'Todos' || selectedCategory !== 'Todas' || statusFilter !== 'all') && (
+          {/* Selectores — siempre visibles en desktop, togglables en mobile */}
+          <div className={['flex flex-wrap items-center gap-2.5', showFilters ? 'flex' : 'hidden md:flex'].join(' ')}>
+            {/* Material */}
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs text-muted font-medium shrink-0">Material:</label>
+              <select
+                value={selectedMaterial}
+                onChange={(e) => {
+                  setSelectedMaterial(e.target.value as any);
+                  setSelectedSubcategory('Todos');
+                }}
+                className="text-xs bg-sand/40 border border-line rounded-xl px-3 py-2 text-ink font-medium focus:outline-none focus:border-ink/40 cursor-pointer"
+              >
+                <option value="Todos">Todos ({items.length})</option>
+                {MATERIALS.map((mat) => {
+                  const count = items.filter((i) => getProductClassification(i).material === mat).length;
+                  return (
+                    <option key={mat} value={mat}>
+                      {mat} ({count})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            {/* Tipo */}
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs text-muted font-medium shrink-0">Tipo:</label>
+              <select
+                value={selectedSubcategory}
+                onChange={(e) => setSelectedSubcategory(e.target.value)}
+                className="text-xs bg-sand/40 border border-line rounded-xl px-3 py-2 text-ink font-medium focus:outline-none focus:border-ink/40 cursor-pointer"
+              >
+                <option value="Todos">Todos</option>
+                {availableSubcategories.map((sub) => {
+                  const count = items.filter((i) => {
+                    const c = getProductClassification(i);
+                    if (selectedMaterial !== 'Todos' && c.material !== selectedMaterial) return false;
+                    return normalizeSubcategory(c.subcategory) === normalizeSubcategory(sub);
+                  }).length;
+                  return (
+                    <option key={sub} value={sub}>
+                      {sub} ({count})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            {/* Estado */}
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs text-muted font-medium shrink-0">Estado:</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="text-xs bg-sand/40 border border-line rounded-xl px-3 py-2 text-ink font-medium focus:outline-none focus:border-ink/40 cursor-pointer"
+              >
+                <option value="all">Todos ({items.length})</option>
+                <option value="active">Activos ({liveCount})</option>
+                <option value="out_of_stock">Sin stock ({outOfStock})</option>
+              </select>
+            </div>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-xs text-amber-700 hover:text-amber-800 font-medium underline cursor-pointer"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+
+          {/* Resumen de filtros activos */}
+          {hasActiveFilters && (
             <div className="flex items-center justify-between pt-2 border-t border-line/40 text-xs text-muted">
               <div className="flex items-center gap-2 flex-wrap">
                 <span>
@@ -380,14 +457,8 @@ export function AdminDashboard() {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedCategory('Todas');
-                  setSelectedMaterial('Todos');
-                  setSelectedSubcategory('Todos');
-                  setStatusFilter('all');
-                }}
-                className="text-amber-700 hover:text-amber-800 font-medium underline cursor-pointer shrink-0"
+                onClick={clearFilters}
+                className="hidden sm:block text-amber-700 hover:text-amber-800 font-medium underline cursor-pointer shrink-0"
               >
                 Limpiar filtros
               </button>
@@ -395,7 +466,8 @@ export function AdminDashboard() {
           )}
         </div>
 
-        <div className="mt-5">
+        {/* Tabla / Cards de inventario */}
+        <div className="mt-4 sm:mt-5">
           {inventoryLoading ? (
             <div className="rounded-2xl border border-line bg-white p-12 text-center text-muted">
               <Loader2 className="mx-auto h-6 w-6 animate-spin text-amber-600 mb-2" />
@@ -404,14 +476,10 @@ export function AdminDashboard() {
           ) : filteredItems.length === 0 ? (
             <div className="rounded-2xl border border-line bg-white p-12 text-center">
               <p className="font-serif text-lg text-ink">No se encontraron productos</p>
-              <p className="text-xs text-muted mt-1">Prueba con otros términos de búsqueda o quitando los filtros aplicados.</p>
+              <p className="text-xs text-muted mt-1">Probá con otros términos o quitá los filtros.</p>
               <button
                 type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedCategory('Todas');
-                  setStatusFilter('all');
-                }}
+                onClick={clearFilters}
                 className="mt-4 rounded-full bg-ink px-4 py-2 text-xs font-medium text-ivory hover:bg-ink/80 transition-colors cursor-pointer"
               >
                 Ver todos los productos
@@ -426,11 +494,13 @@ export function AdminDashboard() {
                 onPrice={setPrice}
                 onStock={setStock}
                 onCategory={setCategory}
+                onClassification={setClassification}
+                onSale={setSale}
                 onToggle={toggleActive}
                 onRemove={remove}
               />
 
-              {/* Controles de paginación si hay más de 50 productos */}
+              {/* Paginación */}
               {totalPages > 1 && (
                 <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted px-2">
                   <div>
@@ -473,6 +543,13 @@ export function AdminDashboard() {
         onSuccess={() => {
           refresh();
         }}
+      />
+
+      {/* Modal de agregar producto */}
+      <AddProductModal
+        isOpen={isAddProductModalOpen}
+        onClose={() => setIsAddProductModalOpen(false)}
+        onSubmit={addProduct}
       />
     </div>
   );

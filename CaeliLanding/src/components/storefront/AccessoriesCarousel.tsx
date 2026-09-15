@@ -175,7 +175,7 @@ export function AccessoriesCarousel({ products = [] }: AccessoriesCarouselProps)
                     {formatPrice(product.price)}
                   </span>
                   {product.stock <= 5 && (
-                    <span className="text-[11px] text-rose font-medium">
+                    <span className="text-[11px] text-dusty-rose font-medium">
                       {product.stock === 1 ? '¡Última unidad disponible!' : `Últimas ${product.stock} unidades`}
                     </span>
                   )}

@@ -1,6 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Category, Product } from '../types/product';
+import { Category, Material, Product } from '../types/product';
 import { supabase } from '../lib/supabase';
+import { getProductClassification } from '../utils/productClassification';
+import { parseSaleInfo, formatDescriptionWithSale } from '../utils/saleUtils';
+
+export interface NewProductData {
+  name: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  discountPercentage?: number;
+  onSale?: boolean;
+  stock: number;
+  category: Category;
+  material: Material | '';
+  subcategory: string;
+  active: boolean;
+  files: File[];
+}
 
 function nameFromFile(fileName: string): string {
   const base = fileName.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ');
@@ -64,18 +81,30 @@ export function useInventory() {
       }
 
       if (data && data.length > 0) {
-        const mapped: Product[] = data.map((row: any) => ({
-          id: String(row.id),
-          name: row.name || 'Sin nombre',
-          category: (row.category as Category) || 'Anillos',
-          price: Number(row.price) || 0,
-          detail: row.detail || '',
-          description: row.description || '',
-          images: Array.isArray(row.images) && row.images.length > 0 ? row.images : ['/LogoCaeli-removebg-preview.png'],
-          stock: Number(row.stock) || 0,
-          active: Boolean(row.active),
-          featured: Boolean(row.featured),
-        }));
+        const mapped: Product[] = data.map((row: any) => {
+          const { onSale, originalPrice, discountPercentage, cleanDescription } = parseSaleInfo(row.description, Number(row.price));
+          const rawItem: Product = {
+            id: String(row.id),
+            name: row.name || 'Sin nombre',
+            category: (row.category as Category) || 'Anillos',
+            price: Number(row.price) || 0,
+            originalPrice,
+            discountPercentage,
+            onSale,
+            detail: row.detail || '',
+            description: cleanDescription,
+            images: Array.isArray(row.images) && row.images.length > 0 ? row.images : ['/LogoCaeli-removebg-preview.png'],
+            stock: Number(row.stock) || 0,
+            active: Boolean(row.active),
+            featured: Boolean(row.featured),
+          };
+          const cls = getProductClassification(rawItem);
+          return {
+            ...rawItem,
+            material: cls.material,
+            subcategory: cls.subcategory,
+          };
+        });
         setItems(mapped);
         setIsEmptyDb(false);
       } else {
@@ -113,15 +142,27 @@ export function useInventory() {
       );
       flagSaved(id);
 
-      // 2. Persistir en Supabase
+      // 2. Persistir en Supabase (filtrando columnas cliente que no existen en tabla supabase)
       try {
-        const { error } = await supabase
-          .from('products')
-          .update(changes)
-          .eq('id', id);
+        const {
+          material: _m,
+          subcategory: _s,
+          isDraft: _d,
+          onSale: _os,
+          originalPrice: _op,
+          discountPercentage: _dp,
+          ...dbPayload
+        } = changes as any;
 
-        if (error) {
-          console.error('Error al guardar cambio en Supabase:', error.message);
+        if (Object.keys(dbPayload).length > 0) {
+          const { error } = await supabase
+            .from('products')
+            .update(dbPayload)
+            .eq('id', id);
+
+          if (error) {
+            console.error('Error al guardar cambio en Supabase:', error.message);
+          }
         }
       } catch (err) {
         console.error('Excepción al guardar cambio en Supabase:', err);
@@ -174,9 +215,88 @@ export function useInventory() {
     [patch]
   );
 
-  const setDescription = useCallback(
-    (id: string, description: string) => patch(id, { description }),
+  const setClassification = useCallback(
+    (id: string, material: Material, subcategory: string) => {
+      const formattedDetail = `${material} · ${subcategory}`;
+      patch(id, {
+        material,
+        subcategory,
+        detail: formattedDetail,
+      });
+    },
     [patch]
+  );
+
+  const setDescription = useCallback(
+    (id: string, description: string) => {
+      const cleanDesc = description.trim();
+      setItems((prev) => {
+        const target = prev.find((item) => item.id === id);
+        const rawDescForDb = target?.onSale && target?.originalPrice
+          ? formatDescriptionWithSale(cleanDesc, true, target.originalPrice, target.discountPercentage)
+          : cleanDesc;
+
+        supabase
+          .from('products')
+          .update({ description: rawDescForDb })
+          .eq('id', id)
+          .then(({ error }) => {
+            if (error) console.error('Error al actualizar descripción:', error.message);
+          });
+
+        return prev.map((item) => (item.id === id ? { ...item, description: cleanDesc } : item));
+      });
+      flagSaved(id);
+    },
+    [flagSaved]
+  );
+
+  const setSale = useCallback(
+    (id: string, onSale: boolean, originalPrice?: number, discountPercentage?: number, finalPrice?: number) => {
+      setItems((prev) => {
+        const target = prev.find((item) => item.id === id);
+        if (!target) return prev;
+
+        const effectivePrice = onSale
+          ? (finalPrice !== undefined ? Math.max(0, finalPrice) : target.price)
+          : (originalPrice || target.price);
+
+        const effectiveOrigPrice = onSale ? (originalPrice || target.price) : undefined;
+        const effectiveDiscount = onSale ? (discountPercentage || 0) : undefined;
+
+        const rawDescForDb = formatDescriptionWithSale(
+          target.description || '',
+          onSale,
+          effectiveOrigPrice,
+          effectiveDiscount
+        );
+
+        supabase
+          .from('products')
+          .update({
+            price: effectivePrice,
+            description: rawDescForDb,
+          })
+          .eq('id', id)
+          .then(({ error }) => {
+            if (error) console.error('Error al actualizar oferta en Supabase:', error.message);
+          });
+
+        return prev.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                onSale,
+                originalPrice: effectiveOrigPrice,
+                discountPercentage: effectiveDiscount,
+                price: effectivePrice,
+              }
+            : item
+        );
+      });
+      flagSaved(id);
+    },
+    [flagSaved]
   );
 
   const toggleActive = useCallback(
@@ -320,6 +440,74 @@ export function useInventory() {
     [flagSaved]
   );
 
+  // Crear un nuevo producto con datos completos desde el modal
+  const addProduct = useCallback(
+    async (data: NewProductData) => {
+      setIsUploading(true);
+      try {
+        let uploadedUrls: string[] = [];
+
+        if (data.files.length > 0) {
+          uploadedUrls = await Promise.all(
+            data.files.map((file) => uploadFileToSupabase(file))
+          );
+        }
+
+        const descForDb = data.onSale && data.originalPrice
+          ? formatDescriptionWithSale(data.description.trim(), true, data.originalPrice, data.discountPercentage)
+          : data.description.trim();
+
+        const newId = `prod-${Date.now()}`;
+        const newProduct: Product = {
+          id: newId,
+          name: data.name.trim() || 'Sin nombre',
+          category: data.category,
+          price: Math.max(0, data.price),
+          originalPrice: data.onSale ? data.originalPrice : undefined,
+          discountPercentage: data.onSale ? data.discountPercentage : undefined,
+          onSale: data.onSale,
+          detail: data.material ? `${data.material}${data.subcategory ? ` / ${data.subcategory}` : ''}` : 'Sin especificar',
+          description: data.description.trim(),
+          images: uploadedUrls.length > 0 ? uploadedUrls : ['/LogoCaeli-removebg-preview.png'],
+          stock: Math.max(0, data.stock),
+          active: data.active && Math.max(0, data.stock) > 0,
+          isDraft: false,
+        };
+
+        // Mostrar inmediatamente en la tabla
+        setItems((prev) => [newProduct, ...prev]);
+
+        // Guardar en Supabase
+        const { error } = await supabase.from('products').insert([
+          {
+            id: newProduct.id,
+            name: newProduct.name,
+            category: newProduct.category,
+            price: newProduct.price,
+            detail: newProduct.detail,
+            description: descForDb,
+            images: newProduct.images,
+            stock: newProduct.stock,
+            active: newProduct.active,
+            featured: false,
+          },
+        ]);
+
+        if (error) {
+          console.error('Error al guardar nuevo producto en Supabase:', error.message);
+        } else {
+          setIsEmptyDb(false);
+          flagSaved(newId);
+        }
+      } catch (err) {
+        console.error('Error al crear producto:', err);
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [flagSaved]
+  );
+
   return {
     items,
     loading,
@@ -330,10 +518,13 @@ export function useInventory() {
     setPrice,
     setStock,
     setCategory,
+    setClassification,
     setDescription,
+    setSale,
     toggleActive,
     remove,
     addFiles,
+    addProduct,
     addImagesToProduct,
     removeImageFromProduct,
     refresh: loadProducts,
