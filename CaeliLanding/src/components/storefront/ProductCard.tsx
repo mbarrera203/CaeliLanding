@@ -121,22 +121,16 @@ export function ProductCard({
         >
         {/* Carrusel Interno (Efecto de subida en hover) */}
         <div className="absolute inset-0 h-full w-full transition-transform duration-500 ease-soft group-hover:-translate-y-8">
-          <AnimatePresence initial={false}>
-            <motion.img
+            <img
               key={imgIndex}
               src={product.images[imgIndex]}
               alt={product.name}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              loading={index > 3 ? 'lazy' : 'eager'}
+              decoding="async"
               className={[
                 'absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-soft group-hover:scale-[1.03]',
                 soldOut ? 'opacity-55' : '',
               ].join(' ')}
             />
-          </AnimatePresence>
 
           {/* Controles del carrusel */}
           {hasMultipleImages && (

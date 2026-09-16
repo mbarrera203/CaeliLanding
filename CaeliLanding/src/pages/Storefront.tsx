@@ -27,6 +27,11 @@ export function Storefront({ actionStyle }: StorefrontProps) {
   const [selectedSubcategory, setSelectedSubcategory] = useState<'Todos' | string>('Todos');
   const [searchQuery, setSearchQuery] = useState('');
   const [onlyOffers, setOnlyOffers] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(12);
+
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [selectedMaterial, selectedSubcategory, searchQuery, onlyOffers]);
 
   useEffect(() => {
     async function loadStoreCatalog() {
@@ -302,17 +307,29 @@ export function Storefront({ actionStyle }: StorefrontProps) {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-x-5 gap-y-12 sm:grid-cols-2 md:grid-cols-3 md:gap-x-6 xl:grid-cols-4 xl:gap-x-8">
-              {visible.map((product, index) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  index={index}
-                  actionStyle={actionStyle}
-                  featured={selectedMaterial === 'Todos' && Boolean(product.featured)}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 gap-x-5 gap-y-12 sm:grid-cols-2 md:grid-cols-3 md:gap-x-6 xl:grid-cols-4 xl:gap-x-8">
+                {visible.slice(0, visibleCount).map((product, index) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    index={index}
+                    actionStyle={actionStyle}
+                    featured={selectedMaterial === 'Todos' && Boolean(product.featured)}
+                  />
+                ))}
+              </div>
+              {visibleCount < visible.length && (
+                <div className="mt-16 flex justify-center">
+                  <button
+                    onClick={() => setVisibleCount(prev => prev + 12)}
+                    className="rounded-full border border-line/80 bg-white px-8 py-3.5 text-[14px] font-medium text-ink shadow-sm transition-all hover:bg-stone-50 hover:border-line focus:outline-none focus:ring-2 focus:ring-gold/50"
+                  >
+                    Cargar más
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </section>
       </main>
