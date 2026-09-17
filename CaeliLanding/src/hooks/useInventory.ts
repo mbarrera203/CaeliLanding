@@ -97,6 +97,8 @@ export function useInventory() {
             stock: Number(row.stock) || 0,
             active: Boolean(row.active),
             featured: Boolean(row.featured),
+            material: row.material,
+            subcategory: row.subcategory,
           };
           const cls = getProductClassification(rawItem);
           return {

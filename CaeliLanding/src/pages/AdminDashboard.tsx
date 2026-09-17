@@ -3,18 +3,22 @@ import { AdminHeader } from '../components/admin/AdminHeader';
 import { UploadZone } from '../components/admin/UploadZone';
 import { InventoryTable } from '../components/admin/InventoryTable';
 import { AdminLogin } from '../components/admin/AdminLogin';
+import { CategoryManagerModal } from '../components/admin/CategoryManagerModal';
 import { TiendaNubeImportModal } from '../components/admin/TiendaNubeImportModal';
 import { AddProductModal } from '../components/admin/AddProductModal';
 import { useInventory } from '../hooks/useInventory';
 import { useAuth } from '../hooks/useAuth';
-import { Material, MATERIALS, TIENDANUBE_TREE } from '../types/product';
+import { Material } from '../types/product';
 import { getProductClassification, normalizeSubcategory } from '../utils/productClassification';
-import { Loader2, CloudUpload, Database, FileSpreadsheet, Search, X, SlidersHorizontal, PackagePlus } from 'lucide-react';
+import { useCategories } from '../hooks/useCategories';
+import { Loader2, CloudUpload, Database, FileSpreadsheet, Search, X, SlidersHorizontal, PackagePlus, FolderTree } from 'lucide-react';
 
 export function AdminDashboard() {
+  const { categories, subcategories } = useCategories();
   const { user, loading: authLoading, isAuthenticated, signIn, signOut } = useAuth();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -88,13 +92,12 @@ export function AdminDashboard() {
   const availableSubcategories = useMemo(() => {
     if (selectedMaterial === 'Todos') {
       const set = new Set<string>();
-      Object.values(TIENDANUBE_TREE).forEach((subs) =>
-        subs.forEach((s) => set.add(normalizeSubcategory(s)))
-      );
+      subcategories.forEach((s) => set.add(s.name));
       return Array.from(set);
     }
-    return (TIENDANUBE_TREE[selectedMaterial] || []).map(normalizeSubcategory);
-  }, [selectedMaterial]);
+    const cat = categories.find(c => c.name === selectedMaterial);
+    return cat ? subcategories.filter(s => s.category_id === cat.id).map(s => s.name) : [];
+  }, [selectedMaterial, categories, subcategories]);
 
   // Resetear página al filtrar
   useEffect(() => {
@@ -281,6 +284,14 @@ export function AdminDashboard() {
             </button>
 
             <button
+              onClick={() => setIsCategoryModalOpen(true)}
+              className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full border border-amber-300 bg-amber-50/90 px-5 py-2.5 sm:py-2 text-[13px] font-medium text-amber-900 shadow-sm hover:bg-amber-100 hover:border-amber-400 transition-all cursor-pointer active:scale-98"
+            >
+              <FolderTree className="h-4 w-4 text-amber-700" />
+              <span>Categorías</span>
+            </button>
+
+            <button
               onClick={() => setIsImportModalOpen(true)}
               className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full border border-amber-300 bg-amber-50/90 px-5 py-2.5 sm:py-2 text-[13px] font-medium text-amber-900 shadow-sm hover:bg-amber-100 hover:border-amber-400 transition-all cursor-pointer active:scale-98"
             >
@@ -357,15 +368,12 @@ export function AdminDashboard() {
                 }}
                 className="text-xs bg-sand/40 border border-line rounded-xl px-3 py-2 text-ink font-medium focus:outline-none focus:border-ink/40 cursor-pointer"
               >
-                <option value="Todos">Todos ({items.length})</option>
-                {MATERIALS.map((mat) => {
-                  const count = items.filter((i) => getProductClassification(i).material === mat).length;
-                  return (
-                    <option key={mat} value={mat}>
-                      {mat} ({count})
-                    </option>
-                  );
-                })}
+                <option value="Todos">Todos los materiales</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -377,19 +385,12 @@ export function AdminDashboard() {
                 onChange={(e) => setSelectedSubcategory(e.target.value)}
                 className="text-xs bg-sand/40 border border-line rounded-xl px-3 py-2 text-ink font-medium focus:outline-none focus:border-ink/40 cursor-pointer"
               >
-                <option value="Todos">Todos</option>
-                {availableSubcategories.map((sub) => {
-                  const count = items.filter((i) => {
-                    const c = getProductClassification(i);
-                    if (selectedMaterial !== 'Todos' && c.material !== selectedMaterial) return false;
-                    return normalizeSubcategory(c.subcategory) === normalizeSubcategory(sub);
-                  }).length;
-                  return (
-                    <option key={sub} value={sub}>
-                      {sub} ({count})
-                    </option>
-                  );
-                })}
+                <option value="Todos">Todos los tipos</option>
+                {availableSubcategories.map((sub) => (
+                  <option key={sub} value={sub}>
+                    {sub}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -401,9 +402,9 @@ export function AdminDashboard() {
                 onChange={(e) => setStatusFilter(e.target.value as any)}
                 className="text-xs bg-sand/40 border border-line rounded-xl px-3 py-2 text-ink font-medium focus:outline-none focus:border-ink/40 cursor-pointer"
               >
-                <option value="all">Todos ({items.length})</option>
-                <option value="active">Activos ({liveCount})</option>
-                <option value="out_of_stock">Sin stock ({outOfStock})</option>
+                <option value="all">Todos</option>
+                <option value="active">Solo activos</option>
+                <option value="out_of_stock">Solo sin stock</option>
               </select>
             </div>
 
@@ -418,41 +419,61 @@ export function AdminDashboard() {
             )}
           </div>
 
-          {/* Resumen de filtros activos */}
-          {hasActiveFilters && (
-            <div className="flex items-center justify-between pt-2 border-t border-line/40 text-xs text-muted">
-              <div className="flex items-center gap-2 flex-wrap">
+          {/* Resumen de resultados — siempre visible */}
+          <div className="flex items-center justify-between pt-2 border-t border-line/40 text-xs text-muted">
+            <div className="flex items-center gap-2 flex-wrap">
+              {hasActiveFilters ? (
+                <>
+                  <span>
+                    Mostrando <strong className="text-ink font-semibold">{filteredItems.length}</strong> de {items.length} productos
+                  </span>
+                  {selectedMaterial !== 'Todos' && (
+                    <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-full text-[11px] font-medium">
+                      {selectedMaterial}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedMaterial('Todos');
+                          setSelectedSubcategory('Todos');
+                        }}
+                        className="hover:text-amber-700 ml-0.5"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {selectedSubcategory !== 'Todos' && (
+                    <span className="inline-flex items-center gap-1 bg-stone-100 text-stone-800 border border-stone-200 px-2 py-0.5 rounded-full text-[11px] font-medium">
+                      {selectedSubcategory}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSubcategory('Todos')}
+                        className="hover:text-stone-600 ml-0.5"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {statusFilter !== 'all' && (
+                    <span className="inline-flex items-center gap-1 bg-stone-100 text-stone-800 border border-stone-200 px-2 py-0.5 rounded-full text-[11px] font-medium">
+                      {statusFilter === 'active' ? 'Solo activos' : 'Solo sin stock'}
+                      <button
+                        type="button"
+                        onClick={() => setStatusFilter('all')}
+                        className="hover:text-stone-600 ml-0.5"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                </>
+              ) : (
                 <span>
-                  Mostrando <strong className="text-ink font-semibold">{filteredItems.length}</strong> de {items.length} productos
+                  <strong className="text-ink font-semibold">{items.length}</strong> productos en total · <span className="text-ink font-medium">{liveCount} activos</span> · {outOfStock} sin stock
                 </span>
-                {selectedMaterial !== 'Todos' && (
-                  <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-full text-[11px] font-medium">
-                    Material: {selectedMaterial}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedMaterial('Todos');
-                        setSelectedSubcategory('Todos');
-                      }}
-                      className="hover:text-amber-700 ml-0.5"
-                    >
-                      ×
-                    </button>
-                  </span>
-                )}
-                {selectedSubcategory !== 'Todos' && (
-                  <span className="inline-flex items-center gap-1 bg-stone-100 text-stone-800 border border-stone-200 px-2 py-0.5 rounded-full text-[11px] font-medium">
-                    Tipo: {selectedSubcategory}
-                    <button
-                      type="button"
-                      onClick={() => setSelectedSubcategory('Todos')}
-                      className="hover:text-stone-600 ml-0.5"
-                    >
-                      ×
-                    </button>
-                  </span>
-                )}
-              </div>
+              )}
+            </div>
+            {hasActiveFilters && (
               <button
                 type="button"
                 onClick={clearFilters}
@@ -460,8 +481,8 @@ export function AdminDashboard() {
               >
                 Limpiar filtros
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Tabla / Cards de inventario */}
@@ -541,6 +562,12 @@ export function AdminDashboard() {
         onSuccess={() => {
           refresh();
         }}
+      />
+
+      {/* Modal de gestión de categorías */}
+      <CategoryManagerModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
       />
 
       {/* Modal de agregar producto */}

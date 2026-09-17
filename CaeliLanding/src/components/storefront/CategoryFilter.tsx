@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Material, MATERIALS, TIENDANUBE_TREE } from '../../types/product';
+import { useState, useMemo } from 'react';
+import { Material } from '../../types/product';
+import { useCategories } from '../../hooks/useCategories';
 import { ChevronDown, ChevronUp, Search, X, LayoutGrid } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -38,11 +39,15 @@ export function CategoryFilter({
 }: CategoryFilterProps) {
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
 
+  const { categories, subcategories } = useCategories();
+
   // Subcategorías a mostrar según el material seleccionado (solo cuando se elige una categoría específica)
-  const currentSubcategories =
-    selectedMaterial === 'Todos'
-      ? []
-      : ['Todos', ...(TIENDANUBE_TREE[selectedMaterial] || [])];
+  const currentSubcategories = useMemo(() => {
+    if (selectedMaterial === 'Todos') return [];
+    const cat = categories.find((c) => c.name === selectedMaterial);
+    const subs = cat ? subcategories.filter((s) => s.category_id === cat.id).map(s => s.name) : [];
+    return ['Todos', ...subs];
+  }, [selectedMaterial, categories, subcategories]);
 
   const hasActiveFilters =
     selectedMaterial !== 'Todos' || selectedSubcategory !== 'Todos' || searchQuery.trim() !== '' || onlyOffers;
@@ -145,8 +150,8 @@ export function CategoryFilter({
 
           </button>
 
-          {/* Pastillas de cada Material */}
-          {MATERIALS.map((mat) => {
+          {categories.map((cat) => {
+            const mat = cat.name;
             const isSelected = selectedMaterial === mat && !onlyOffers;
             const count = materialCounts[mat] || 0;
             return (
@@ -155,7 +160,7 @@ export function CategoryFilter({
                 type="button"
                 onClick={() => {
                   onToggleOffers?.(false);
-                  onSelectMaterial(mat);
+                  onSelectMaterial(mat as Material);
                   onSelectSubcategory('Todos');
                 }}
                 className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[13px] font-medium transition-all duration-200 cursor-pointer ${
@@ -275,166 +280,40 @@ export function CategoryFilter({
                 </button>
               </div>
 
-              {/* Grid de 5 columnas idéntico a TiendaNube */}
+              {/* Menú generado dinámicamente con las categorías */}
               <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:grid-cols-5 text-left">
-                {/* 1. PLATA */}
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => handleMegaMenuSelect('Plata')}
-                    className="font-bold text-[13px] tracking-wider text-ink uppercase hover:text-gold transition-colors text-left w-full cursor-pointer flex items-center justify-between group"
-                  >
-                    <span>PLATA</span>
-
-                  </button>
-                  <ul className="mt-3 space-y-2 text-[13px] text-muted">
-                    {TIENDANUBE_TREE['Plata'].map((item) => (
-                      <li key={item}>
-                        <button
-                          type="button"
-                          onClick={() => handleMegaMenuSelect('Plata', item)}
-                          className={`hover:text-ink transition-colors cursor-pointer text-left w-full ${
-                            selectedMaterial === 'Plata' && selectedSubcategory === item
-                              ? 'text-gold-dark font-semibold'
-                              : ''
-                          }`}
-                        >
-                          {item}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* 2. ACERO BLANCO */}
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => handleMegaMenuSelect('Acero Blanco')}
-                    className="font-bold text-[13px] tracking-wider text-ink uppercase hover:text-gold transition-colors text-left w-full cursor-pointer flex items-center justify-between group"
-                  >
-                    <span>ACERO BLANCO</span>
-
-                  </button>
-                  <ul className="mt-3 space-y-2 text-[13px] text-muted">
-                    {TIENDANUBE_TREE['Acero Blanco'].map((item) => (
-                      <li key={item}>
-                        <button
-                          type="button"
-                          onClick={() => handleMegaMenuSelect('Acero Blanco', item)}
-                          className={`hover:text-ink transition-colors cursor-pointer text-left w-full ${
-                            selectedMaterial === 'Acero Blanco' && selectedSubcategory === item
-                              ? 'text-gold-dark font-semibold'
-                              : ''
-                          }`}
-                        >
-                          {item}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* 3. ACERO DORADO */}
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => handleMegaMenuSelect('Acero Dorado')}
-                    className="font-bold text-[13px] tracking-wider text-ink uppercase hover:text-gold transition-colors text-left w-full cursor-pointer flex items-center justify-between group"
-                  >
-                    <span>ACERO DORADO</span>
-
-                  </button>
-                  <ul className="mt-3 space-y-2 text-[13px] text-muted">
-                    {TIENDANUBE_TREE['Acero Dorado'].map((item) => (
-                      <li key={item}>
-                        <button
-                          type="button"
-                          onClick={() => handleMegaMenuSelect('Acero Dorado', item)}
-                          className={`hover:text-ink transition-colors cursor-pointer text-left w-full ${
-                            selectedMaterial === 'Acero Dorado' && selectedSubcategory === item
-                              ? 'text-gold-dark font-semibold'
-                              : ''
-                          }`}
-                        >
-                          {item}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* 4. COSITAS VARIAS :) */}
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => handleMegaMenuSelect('Cositas Varias :)')}
-                    className="font-bold text-[13px] tracking-wider text-ink uppercase hover:text-gold transition-colors text-left w-full cursor-pointer flex items-center justify-between group"
-                  >
-                    <span>COSITAS VARIAS :)</span>
-
-                  </button>
-                  <ul className="mt-3 space-y-2 text-[13px] text-muted">
-                    {TIENDANUBE_TREE['Cositas Varias :)'].map((item) => (
-                      <li key={item}>
-                        <button
-                          type="button"
-                          onClick={() => handleMegaMenuSelect('Cositas Varias :)', item)}
-                          className={`hover:text-ink transition-colors cursor-pointer text-left w-full ${
-                            selectedMaterial === 'Cositas Varias :)' && selectedSubcategory === item
-                              ? 'text-gold-dark font-semibold'
-                              : ''
-                          }`}
-                        >
-                          {item}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* 5. FANTASÍA & COLLARES CRISTAL */}
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => handleMegaMenuSelect('Fantasía')}
-                    className="font-bold text-[13px] tracking-wider text-ink uppercase hover:text-gold transition-colors text-left w-full cursor-pointer flex items-center justify-between group"
-                  >
-                    <span>FANTASÍA</span>
-
-                  </button>
-                  <ul className="mt-3 space-y-2 text-[13px] text-muted">
-                    {TIENDANUBE_TREE['Fantasía'].map((item) => (
-                      <li key={item}>
-                        <button
-                          type="button"
-                          onClick={() => handleMegaMenuSelect('Fantasía', item)}
-                          className={`hover:text-ink transition-colors cursor-pointer text-left w-full ${
-                            selectedMaterial === 'Fantasía' && selectedSubcategory === item
-                              ? 'text-gold-dark font-semibold'
-                              : ''
-                          }`}
-                        >
-                          {item}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* Sección Collares Cristal */}
-                  <div className="mt-5 pt-3 border-t border-line/60">
+                {categories.map((cat) => (
+                  <div key={cat.id}>
                     <button
                       type="button"
-                      onClick={() => handleMegaMenuSelect('Collares Cristal')}
+                      onClick={() => handleMegaMenuSelect(cat.name as Material)}
                       className={`font-bold text-[13px] tracking-wider text-ink uppercase hover:text-gold transition-colors text-left w-full cursor-pointer flex items-center justify-between group ${
-                        selectedMaterial === 'Collares Cristal' ? 'text-gold-dark' : ''
+                        selectedMaterial === cat.name ? 'text-gold-dark' : ''
                       }`}
                     >
-                      <span>COLLARES CRISTAL</span>
-
+                      <span>{cat.name}</span>
                     </button>
+                    <ul className="mt-3 space-y-2 text-[13px] text-muted">
+                      {subcategories
+                        .filter((s) => s.category_id === cat.id)
+                        .map((item) => (
+                          <li key={item.id}>
+                            <button
+                              type="button"
+                              onClick={() => handleMegaMenuSelect(cat.name as Material, item.name)}
+                              className={`hover:text-ink transition-colors cursor-pointer text-left w-full ${
+                                selectedMaterial === cat.name && selectedSubcategory === item.name
+                                  ? 'text-gold-dark font-semibold'
+                                  : ''
+                              }`}
+                            >
+                              {item.name}
+                            </button>
+                          </li>
+                        ))}
+                    </ul>
                   </div>
-                </div>
+                ))}
               </div>
 
               {/* Botón para ver todo */}

@@ -59,6 +59,8 @@ export function Storefront({ actionStyle }: StorefrontProps) {
               stock: Number(row.stock),
               active: Boolean(row.active),
               featured: Boolean(row.featured),
+              material: row.material,
+              subcategory: row.subcategory,
             };
             const classification = getProductClassification(rawProduct);
             return {

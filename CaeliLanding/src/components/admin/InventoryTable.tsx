@@ -3,8 +3,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CheckIcon, Trash2Icon, PlusIcon, XIcon, Tag } from 'lucide-react';
 import { InlineField } from './InlineField';
 import { StatusToggle } from './StatusToggle';
-import { Material, MATERIALS, TIENDANUBE_TREE, Product } from '../../types/product';
+import { Product, Material } from '../../types/product';
 import { getProductClassification } from '../../utils/productClassification';
+import { useCategories } from '../../hooks/useCategories';
 import { calculateDiscountPrice, calculateDiscountPercentage } from '../../utils/saleUtils';
 
 interface InventoryTableProps {
@@ -32,6 +33,8 @@ export function InventoryTable({
   onToggle,
   onRemove,
 }: InventoryTableProps) {
+  const { categories, subcategories } = useCategories();
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, id: string) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
@@ -65,8 +68,11 @@ export function InventoryTable({
         {items.map((item) => {
           const classification = getProductClassification(item);
           const isSaved = savedId === item.id;
-          const currentMaterial = (classification.material as Material) || 'Plata';
-          const availableSubcategories = TIENDANUBE_TREE[currentMaterial] || [];
+          const currentMaterial = classification.material || 'Plata';
+          const currentCat = categories.find(c => c.name === currentMaterial);
+          const availableSubcategories = currentCat 
+            ? subcategories.filter(s => s.category_id === currentCat.id).map(s => s.name) 
+            : [];
 
           return (
             <div
@@ -122,18 +128,19 @@ export function InventoryTable({
                     <select
                       value={currentMaterial}
                       onChange={(e) => {
-                        const newMat = e.target.value as Material;
-                        const newSubs = TIENDANUBE_TREE[newMat] || [];
+                        const newMat = e.target.value;
+                        const newCat = categories.find(c => c.name === newMat);
+                        const newSubs = newCat ? subcategories.filter(s => s.category_id === newCat.id).map(s => s.name) : [];
                         const newSub = newSubs.includes(classification.subcategory)
                           ? classification.subcategory
                           : (newSubs[0] || 'Accesorios');
-                        onClassification?.(item.id, newMat, newSub);
+                        onClassification?.(item.id, newMat as Material, newSub);
                       }}
                       aria-label={`Tipo de material de ${item.name}`}
                       className="w-full rounded-lg border border-amber-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-amber-900 outline-none hover:border-amber-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors cursor-pointer"
                     >
-                      {MATERIALS.map((mat) => (
-                        <option key={mat} value={mat}>{mat}</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.name}>{cat.name}</option>
                       ))}
                     </select>
                   </div>
@@ -146,7 +153,7 @@ export function InventoryTable({
                     <select
                       value={classification.subcategory}
                       onChange={(e) => {
-                        onClassification?.(item.id, currentMaterial, e.target.value);
+                        onClassification?.(item.id, currentMaterial as Material, e.target.value);
                       }}
                       aria-label={`Subcategoría de ${item.name}`}
                       className="w-full rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-800 outline-none hover:border-stone-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors cursor-pointer"
@@ -448,6 +455,12 @@ export function InventoryTable({
           <tbody>
             {items.map((item) => {
               const classification = getProductClassification(item);
+              const currentMaterial = classification.material || 'Plata';
+              const currentCat = categories.find(c => c.name === currentMaterial);
+              const availableSubcategories = currentCat 
+                ? subcategories.filter(s => s.category_id === currentCat.id).map(s => s.name) 
+                : [];
+                
               return (
                 <tr
                   key={item.id}
@@ -472,20 +485,21 @@ export function InventoryTable({
                       <div className="ml-2 flex items-center flex-wrap gap-2">
                         {/* Selector de Material */}
                         <select
-                          value={(classification.material as Material) || 'Plata'}
+                          value={currentMaterial}
                           onChange={(e) => {
-                            const newMat = e.target.value as Material;
-                            const newSubs = TIENDANUBE_TREE[newMat] || [];
+                            const newMat = e.target.value;
+                            const newCat = categories.find(c => c.name === newMat);
+                            const newSubs = newCat ? subcategories.filter(s => s.category_id === newCat.id).map(s => s.name) : [];
                             const newSub = newSubs.includes(classification.subcategory)
                               ? classification.subcategory
                               : (newSubs[0] || 'Accesorios');
-                            onClassification?.(item.id, newMat, newSub);
+                            onClassification?.(item.id, newMat as Material, newSub);
                           }}
                           aria-label={`Tipo de material de ${item.name}`}
                           className="cursor-pointer rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-900 border border-amber-200 outline-none hover:border-amber-400 focus:border-amber-500"
                         >
-                          {MATERIALS.map((mat) => (
-                            <option key={mat} value={mat}>{mat}</option>
+                          {categories.map((cat) => (
+                            <option key={cat.id} value={cat.name}>{cat.name}</option>
                           ))}
                         </select>
 
@@ -493,13 +507,13 @@ export function InventoryTable({
                         <select
                           value={classification.subcategory}
                           onChange={(e) => {
-                            onClassification?.(item.id, (classification.material as Material) || 'Plata', e.target.value);
+                            onClassification?.(item.id, currentMaterial as Material, e.target.value);
                           }}
                           aria-label={`Subcategoría de ${item.name}`}
                           className="cursor-pointer rounded-md bg-stone-50 px-2 py-0.5 text-[11px] font-medium text-stone-700 border border-stone-200 outline-none hover:border-stone-300 focus:border-amber-500"
                         >
-                          {((TIENDANUBE_TREE[classification.material as Material] || []).length > 0
-                            ? TIENDANUBE_TREE[classification.material as Material]
+                          {(availableSubcategories.length > 0
+                            ? availableSubcategories
                             : [classification.subcategory]
                           ).map((sub) => (
                             <option key={sub} value={sub}>{sub}</option>

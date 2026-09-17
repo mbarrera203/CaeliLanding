@@ -31,18 +31,24 @@ export function getProductClassification(product: Product): Classification {
   }
 
   // 1b. Si en detail viene un formato de material explícito guardado (ej: "Acero Dorado · Collares y cadenas" o "Plata · Pulseras")
+  let inferredMaterial: Material | null = null;
   if (product.detail) {
     for (const mat of MATERIALS) {
       if (product.detail.startsWith(mat)) {
+        inferredMaterial = mat as Material;
         const rest = product.detail.slice(mat.length).replace(/^[·\/:>\s-]+/, '').trim();
         const availableSubs = TIENDANUBE_TREE[mat] || [];
-        const matchedSub = availableSubs.find((s: string) => s.toLowerCase() === rest.toLowerCase()) || rest;
-        const subcategory = matchedSub || (availableSubs[0] || 'Accesorios');
-        return {
-          material: mat,
-          subcategory,
-          fullCategory: `${mat} > ${subcategory}`,
-        };
+        const matchedSub = availableSubs.find((s: string) => s.toLowerCase() === rest.toLowerCase());
+        
+        // Si el resto coincide EXACTAMENTE con una subcategoría conocida, retornamos
+        if (matchedSub) {
+          return {
+            material: inferredMaterial,
+            subcategory: matchedSub,
+            fullCategory: `${inferredMaterial} > ${matchedSub}`,
+          };
+        }
+        break; // Encontramos el material, pero la subcategoría (ej "925") no nos sirve, seguimos buscando.
       }
     }
   }
@@ -56,9 +62,10 @@ export function getProductClassification(product: Product): Classification {
   // 3. Inferencia inteligente a partir del nombre, detalle y categoría
   const text = `${product.name} ${product.detail} ${product.legacyCategory || ''} ${product.description || ''}`.toLowerCase();
 
-  let material = 'Plata';
-  if (text.includes('acero blanco') || text.includes('(ab)')) {
-    material = 'Acero Blanco';
+  let material = inferredMaterial || 'Plata';
+  if (!inferredMaterial) {
+    if (text.includes('acero blanco') || text.includes('(ab)')) {
+      material = 'Acero Blanco';
   } else if (text.includes('acero dorado') || text.includes('dorado') || text.includes('oro')) {
     material = 'Acero Dorado';
   } else if (text.includes('joyero') || text.includes('traba') || text.includes('billetera') || text.includes('perfume')) {
@@ -69,6 +76,7 @@ export function getProductClassification(product: Product): Classification {
     material = 'Fantasía';
   } else if (text.includes('plata')) {
     material = 'Plata';
+  }
   }
 
   let subcategory = 'Aros';

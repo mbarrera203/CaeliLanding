@@ -1,22 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { X, ImagePlusIcon, PlusIcon, XIcon, Loader2, PackagePlus, Tag } from 'lucide-react';
-import { MATERIALS, Material, TIENDANUBE_TREE } from '../../types/product';
+import { useCategories } from '../../hooks/useCategories';
 import { calculateDiscountPrice, calculateDiscountPercentage } from '../../utils/saleUtils';
-
-export interface NewProductData {
-  name: string;
-  description: string;
-  price: number;
-  stock: number;
-
-  material: Material | '';
-  subcategory: string;
-  active: boolean;
-  files: File[];
-  onSale?: boolean;
-  originalPrice?: number;
-  discountPercentage?: number;
-}
+import { NewProductData } from '../../hooks/useInventory';
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -44,9 +30,14 @@ export function AddProductModal({ isOpen, onClose, onSubmit }: AddProductModalPr
   const [errors, setErrors] = useState<Partial<Record<keyof NewProductData, string>>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const availableSubs: string[] =
-    form.material && TIENDANUBE_TREE[form.material as Material]
-      ? TIENDANUBE_TREE[form.material as Material]
+  const { categories, subcategories } = useCategories();
+
+  const availableSubs =
+    form.material
+      ? subcategories.filter((s) => {
+          const category = categories.find((c) => c.name === form.material);
+          return category && s.category_id === category.id;
+        }).map(s => s.name)
       : [];
 
   useEffect(() => {
@@ -508,15 +499,15 @@ export function AddProductModal({ isOpen, onClose, onSubmit }: AddProductModalPr
                 onChange={(e) =>
                   setForm((p) => ({
                     ...p,
-                    material: e.target.value as Material | '',
+                    material: e.target.value as import('../../types/product').Material | '',
                     subcategory: '',
                   }))
                 }
                 className="w-full rounded-xl border border-line px-4 py-2.5 text-sm text-ink bg-white focus:outline-none focus:border-amber-400 transition-colors cursor-pointer"
               >
                 <option value="">Sin especificar</option>
-                {MATERIALS.map((mat) => (
-                  <option key={mat} value={mat}>{mat}</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>{cat.name}</option>
                 ))}
               </select>
             </div>
