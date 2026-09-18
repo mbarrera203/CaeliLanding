@@ -1,23 +1,29 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Plus, Check, Trash2, FolderTree, ChevronRight, AlertTriangle } from 'lucide-react';
+import { X, Plus, Check, Trash2, FolderTree, ChevronRight, ChevronUp, ChevronDown, AlertTriangle, Edit2 } from 'lucide-react';
 import { useCategories } from '../../hooks/useCategories';
-
 
 /* ─── Inline editable name ─── */
 function EditableName({
   value,
   onSave,
+  onEditingChange,
 }: {
   value: string;
   onSave: (newName: string) => Promise<void>;
+  onEditingChange?: (isEditing: boolean) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (editing) inputRef.current?.select();
-  }, [editing]);
+    if (editing) {
+      inputRef.current?.select();
+      onEditingChange?.(true);
+    } else {
+      onEditingChange?.(false);
+    }
+  }, [editing, onEditingChange]);
 
   const commit = async () => {
     const trimmed = draft.trim();
@@ -36,17 +42,25 @@ function EditableName({
 
   if (!editing) {
     return (
-      <span
-        className="text-sm font-medium text-ink cursor-pointer hover:text-amber-800 transition-colors"
-        onDoubleClick={() => setEditing(true)}
+      <div 
+        className="flex items-center gap-1.5 cursor-text group/edit"
+        onClick={(e) => { e.stopPropagation(); setEditing(true); }}
       >
-        {value}
-      </span>
+        <span className="text-sm font-medium text-ink transition-colors group-hover/edit:text-amber-800">
+          {value}
+        </span>
+        <button 
+          className="opacity-0 group-hover/edit:opacity-100 p-1 text-muted hover:text-amber-700 transition-opacity"
+          title="Editar nombre"
+        >
+          <Edit2 className="h-3 w-3" />
+        </button>
+      </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-1.5 flex-1">
+    <div className="flex items-center gap-1.5 flex-1 w-full" onClick={(e) => e.stopPropagation()}>
       <input
         ref={inputRef}
         value={draft}
@@ -55,22 +69,22 @@ function EditableName({
           if (e.key === 'Enter') commit();
           if (e.key === 'Escape') { setDraft(value); setEditing(false); }
         }}
-        className="flex-1 rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-sm text-ink outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all"
+        className="min-w-0 flex-1 rounded-lg border border-amber-300 bg-white px-2 py-1 text-sm text-ink outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all"
         autoFocus
       />
       <button
         type="button"
         onClick={commit}
-        className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-600 text-white hover:bg-amber-700 transition-colors shrink-0"
+        className="flex h-7 w-7 items-center justify-center rounded-md bg-amber-600 text-white hover:bg-amber-700 transition-colors shrink-0 shadow-sm"
       >
-        <Check className="h-3 w-3" />
+        <Check className="h-3.5 w-3.5" />
       </button>
       <button
         type="button"
         onClick={() => { setDraft(value); setEditing(false); }}
-        className="flex h-6 w-6 items-center justify-center rounded-md border border-line text-muted hover:bg-sand transition-colors shrink-0"
+        className="flex h-7 w-7 items-center justify-center rounded-md border border-line bg-white text-muted hover:bg-sand transition-colors shrink-0 shadow-sm"
       >
-        <X className="h-3 w-3" />
+        <X className="h-3.5 w-3.5" />
       </button>
     </div>
   );
@@ -107,6 +121,170 @@ function ConfirmDelete({ label, onConfirm, onCancel }: { label: string; onConfir
   );
 }
 
+/* ─── Row Components to manage editing state cleanly ─── */
+
+function CategoryRow({
+  cat,
+  subCount,
+  isSelected,
+  index,
+  totalCount,
+  onSelect,
+  onUpdate,
+  onDeleteRequest,
+  onReorder,
+  deleteTarget,
+  onConfirmDelete,
+  onCancelDelete,
+}: any) {
+  const [isEditing, setIsEditing] = useState(false);
+
+  return (
+    <div
+      className={[
+        'relative flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer group',
+        isSelected
+          ? 'bg-amber-50/80 border-amber-300 shadow-sm'
+          : 'bg-white border-transparent hover:border-line hover:shadow-xs',
+      ].join(' ')}
+      onClick={() => onSelect(cat.id)}
+    >
+      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+        {/* Flechitas de reorden */}
+        <div className="flex flex-col shrink-0">
+          <button
+            type="button"
+            disabled={index === 0}
+            onClick={(e) => { e.stopPropagation(); onReorder(cat.id, 'up'); }}
+            className="flex h-4 w-5 items-center justify-center text-muted hover:text-amber-700 disabled:opacity-20 disabled:cursor-default transition-colors"
+            title="Subir"
+          >
+            <ChevronUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            disabled={index === totalCount - 1}
+            onClick={(e) => { e.stopPropagation(); onReorder(cat.id, 'down'); }}
+            className="flex h-4 w-5 items-center justify-center text-muted hover:text-amber-700 disabled:opacity-20 disabled:cursor-default transition-colors"
+            title="Bajar"
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <div className={[
+          'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold transition-colors tabular-nums',
+          isSelected ? 'bg-amber-600 text-white' : 'bg-stone-100 text-stone-500',
+        ].join(' ')}>
+          {index + 1}
+        </div>
+        <div className="flex-1 min-w-0">
+          <EditableName
+            value={cat.name}
+            onSave={(name) => onUpdate(cat.id, name)}
+            onEditingChange={setIsEditing}
+          />
+          {!isEditing && (
+            <p className="text-[11px] text-muted mt-0.5">{subCount} subcategoría{subCount !== 1 ? 's' : ''}</p>
+          )}
+        </div>
+      </div>
+
+      {!isEditing && (
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDeleteRequest({ type: 'cat', id: cat.id }); }}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted opacity-0 group-hover:opacity-100 hover:text-rose-600 hover:bg-rose-50 transition-all"
+            title="Eliminar categoría"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+          {isSelected && (
+            <ChevronRight className="h-4 w-4 text-amber-600 hidden md:block" />
+          )}
+        </div>
+      )}
+
+      {deleteTarget?.type === 'cat' && deleteTarget.id === cat.id && (
+        <ConfirmDelete
+          label={`"${cat.name}" y sus subcategorías`}
+          onConfirm={onConfirmDelete}
+          onCancel={onCancelDelete}
+        />
+      )}
+    </div>
+  );
+}
+
+function SubcategoryRow({
+  sub,
+  idx,
+  totalCount,
+  onUpdate,
+  onDeleteRequest,
+  onReorder,
+  deleteTarget,
+  onConfirmDelete,
+  onCancelDelete,
+}: any) {
+  const [isEditing, setIsEditing] = useState(false);
+
+  return (
+    <div className="relative flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-line/60 bg-white hover:border-line hover:shadow-xs transition-all group">
+      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+        {/* Flechitas de reorden */}
+        <div className="flex flex-col shrink-0">
+          <button
+            type="button"
+            disabled={idx === 0}
+            onClick={() => onReorder(sub.id, 'up')}
+            className="flex h-4 w-5 items-center justify-center text-muted hover:text-amber-700 disabled:opacity-20 disabled:cursor-default transition-colors"
+            title="Subir"
+          >
+            <ChevronUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            disabled={idx === totalCount - 1}
+            onClick={() => onReorder(sub.id, 'down')}
+            className="flex h-4 w-5 items-center justify-center text-muted hover:text-amber-700 disabled:opacity-20 disabled:cursor-default transition-colors"
+            title="Bajar"
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-stone-100 text-[10px] font-bold text-stone-400 tabular-nums">
+          {idx + 1}
+        </span>
+        <EditableName
+          value={sub.name}
+          onSave={(name) => onUpdate(sub.id, name)}
+          onEditingChange={setIsEditing}
+        />
+      </div>
+
+      {!isEditing && (
+        <button
+          type="button"
+          onClick={() => onDeleteRequest({ type: 'sub', id: sub.id })}
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-muted opacity-0 group-hover:opacity-100 hover:text-rose-600 hover:bg-rose-50 transition-all shrink-0"
+          title="Eliminar subcategoría"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      )}
+
+      {deleteTarget?.type === 'sub' && deleteTarget.id === sub.id && (
+        <ConfirmDelete
+          label={`"${sub.name}"`}
+          onConfirm={onConfirmDelete}
+          onCancel={onCancelDelete}
+        />
+      )}
+    </div>
+  );
+}
+
 /* ─── Main Modal ─── */
 export function CategoryManagerModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const {
@@ -118,6 +296,8 @@ export function CategoryManagerModal({ isOpen, onClose }: { isOpen: boolean; onC
     updateSubcategory,
     deleteCategory,
     deleteSubcategory,
+    reorderCategory,
+    reorderSubcategory,
   } = useCategories();
 
   const [newCatName, setNewCatName] = useState('');
@@ -219,7 +399,7 @@ export function CategoryManagerModal({ isOpen, onClose }: { isOpen: boolean; onC
               <h2 id="category-modal-title" className="font-serif text-lg font-medium text-ink">
                 Administrar Categorías
               </h2>
-              <p className="text-[11px] text-muted mt-0.5">Doble clic en un nombre para editarlo</p>
+              <p className="text-[11px] text-muted mt-0.5">Tocá un nombre para editarlo · usá las flechas para reordenar</p>
             </div>
           </div>
           <button
@@ -269,60 +449,23 @@ export function CategoryManagerModal({ isOpen, onClose }: { isOpen: boolean; onC
               {categories.length === 0 && (
                 <p className="text-center text-xs text-muted py-8">No hay categorías aún. ¡Creá la primera!</p>
               )}
-              {categories.map((cat) => {
-                const subCount = subcategories.filter((s) => s.category_id === cat.id).length;
-                const isSelected = selectedCatId === cat.id;
-                return (
-                  <div
-                    key={cat.id}
-                    className={[
-                      'relative flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer group',
-                      isSelected
-                        ? 'bg-amber-50/80 border-amber-300 shadow-sm'
-                        : 'bg-white border-transparent hover:border-line hover:shadow-xs',
-                    ].join(' ')}
-                    onClick={() => setSelectedCatId(cat.id)}
-                  >
-                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                      <div className={[
-                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold transition-colors',
-                        isSelected ? 'bg-amber-600 text-white' : 'bg-stone-100 text-stone-500',
-                      ].join(' ')}>
-                        {cat.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <EditableName
-                          value={cat.name}
-                          onSave={(name) => updateCategory(cat.id, name)}
-                        />
-                        <p className="text-[11px] text-muted mt-0.5">{subCount} subcategoría{subCount !== 1 ? 's' : ''}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-0.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setDeleteTarget({ type: 'cat', id: cat.id }); }}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg text-muted opacity-0 group-hover:opacity-100 hover:text-rose-600 hover:bg-rose-50 transition-all"
-                        title="Eliminar categoría"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                      {isSelected && (
-                        <ChevronRight className="h-4 w-4 text-amber-600 hidden md:block" />
-                      )}
-                    </div>
-
-                    {deleteTarget?.type === 'cat' && deleteTarget.id === cat.id && (
-                      <ConfirmDelete
-                        label={`"${cat.name}" y sus subcategorías`}
-                        onConfirm={confirmDelete}
-                        onCancel={() => setDeleteTarget(null)}
-                      />
-                    )}
-                  </div>
-                );
-              })}
+              {categories.map((cat, index) => (
+                <CategoryRow
+                  key={cat.id}
+                  cat={cat}
+                  index={index}
+                  totalCount={categories.length}
+                  subCount={subcategories.filter((s) => s.category_id === cat.id).length}
+                  isSelected={selectedCatId === cat.id}
+                  onSelect={setSelectedCatId}
+                  onUpdate={updateCategory}
+                  onDeleteRequest={setDeleteTarget}
+                  onReorder={reorderCategory}
+                  deleteTarget={deleteTarget}
+                  onConfirmDelete={confirmDelete}
+                  onCancelDelete={() => setDeleteTarget(null)}
+                />
+              ))}
             </div>
           </div>
 
@@ -364,37 +507,18 @@ export function CategoryManagerModal({ isOpen, onClose }: { isOpen: boolean; onC
                     </p>
                   )}
                   {selectedSubs.map((sub, idx) => (
-                    <div
+                    <SubcategoryRow
                       key={sub.id}
-                      className="relative flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-line/60 bg-white hover:border-line hover:shadow-xs transition-all group"
-                    >
-                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-stone-100 text-[10px] font-bold text-stone-400 tabular-nums">
-                          {idx + 1}
-                        </span>
-                        <EditableName
-                          value={sub.name}
-                          onSave={(name) => updateSubcategory(sub.id, name)}
-                        />
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setDeleteTarget({ type: 'sub', id: sub.id })}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg text-muted opacity-0 group-hover:opacity-100 hover:text-rose-600 hover:bg-rose-50 transition-all shrink-0"
-                        title="Eliminar subcategoría"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-
-                      {deleteTarget?.type === 'sub' && deleteTarget.id === sub.id && (
-                        <ConfirmDelete
-                          label={`"${sub.name}"`}
-                          onConfirm={confirmDelete}
-                          onCancel={() => setDeleteTarget(null)}
-                        />
-                      )}
-                    </div>
+                      sub={sub}
+                      idx={idx}
+                      totalCount={selectedSubs.length}
+                      onUpdate={updateSubcategory}
+                      onDeleteRequest={setDeleteTarget}
+                      onReorder={reorderSubcategory}
+                      deleteTarget={deleteTarget}
+                      onConfirmDelete={confirmDelete}
+                      onCancelDelete={() => setDeleteTarget(null)}
+                    />
                   ))}
                 </div>
               </>
@@ -410,6 +534,17 @@ export function CategoryManagerModal({ isOpen, onClose }: { isOpen: boolean; onC
               </div>
             )}
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="shrink-0 border-t border-line px-5 py-3.5 flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl bg-amber-700 px-6 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-amber-800 transition-colors cursor-pointer"
+          >
+            ✓ Listo
+          </button>
         </div>
       </div>
     </div>

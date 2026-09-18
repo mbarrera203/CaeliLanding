@@ -15,9 +15,26 @@ export function orderLink(product: Product): string {
       ? `${formatPrice(product.price)} (¡en oferta, precio regular ${formatPrice(product.originalPrice)}!)`
       : formatPrice(product.price);
 
-  return whatsappLink(
-    `¡Hola Caeli! Me gustaría consultar y pedir el/la ${product.name} (${priceText}). ¿Tienen stock disponible?`
-  );
+  const materialText = product.material ? `Material: ${product.material}` : (product.detail ? `Detalle: ${product.detail}` : '');
+  const idShort = product.id.split('-')[0]; // Primer bloque del UUID para referencia rápida
+  const imageUrl = product.images?.[0] || '';
+
+  const messageLines = [
+    `¡Hola Caeli! 🌸 Me gustaría consultar por este producto:`,
+    '',
+    `*${product.name}*`,
+    materialText,
+    `Precio: ${priceText}`,
+    `Ref: #${idShort}`,
+    '',
+    `¿Tienen stock disponible?`,
+    '',
+    imageUrl ? `Podés ver la foto acá: ${imageUrl}` : ''
+  ];
+
+  const message = messageLines.filter(line => line !== null).join('\n').trim();
+
+  return whatsappLink(message);
 }
 
 export function formatPrice(value: number): string {

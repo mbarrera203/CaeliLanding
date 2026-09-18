@@ -284,12 +284,12 @@ export function useInventory() {
         return prev.map((item) =>
           item.id === id
             ? {
-                ...item,
-                onSale,
-                originalPrice: effectiveOrigPrice,
-                discountPercentage: effectiveDiscount,
-                price: effectivePrice,
-              }
+              ...item,
+              onSale,
+              originalPrice: effectiveOrigPrice,
+              discountPercentage: effectiveDiscount,
+              price: effectivePrice,
+            }
             : item
         );
       });
@@ -396,7 +396,7 @@ export function useInventory() {
           id: newId,
           name: nameFromFile(imageFiles[0].name),
           price: 0,
-          detail: 'Plata 925 / Acero Quirúrgico',
+          detail: 'Plata 925 / Acero',
           description: 'Añadir una descripción detallada...',
           images: uploadedUrls,
           stock: 1,

@@ -237,13 +237,13 @@ export function Storefront({ actionStyle }: StorefrontProps) {
               Joyas para cada momento
             </h1>
             <p className="mt-3.5 max-w-xl text-[14px] leading-relaxed text-muted sm:text-[15px]">
-              Plata 925 y acero quirúrgico seleccionados para acompañarte todos los días.
+              Plata 925 y acero seleccionados para acompañarte todos los días.
               Sin vueltas ni registros — elegí tu pieza favorita y pedila directo por WhatsApp.
             </p>
 
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[12px] text-muted">
               <span className="inline-flex items-center gap-1">
-                <span className="text-gold">✦</span> Plata 925 & Acero Quirúrgico
+                <span className="text-gold">✦</span> Plata 925 & Acero
               </span>
               <span className="text-stone-300">·</span>
               <span className="inline-flex items-center gap-1">
@@ -350,7 +350,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
                 {WHATSAPP_DISPLAY}
               </a>
               <p className="max-w-[220px] text-[12px] leading-relaxed text-muted mt-2 text-center sm:text-left">
-                Joyas y accesorios en plata 925 y acero quirúrgico de primera calidad. Envíos a toda la Argentina.
+                Joyas y accesorios en plata 925 y acero de primera calidad. Envíos a toda la Argentina.
               </p>
             </div>
 

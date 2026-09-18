@@ -64,7 +64,7 @@ function extractDetail(name: string, tags: string, desc: string): string {
   }
 
   if (text.includes('acero quirurgico') || text.includes('acero quirúrgico') || text.includes('acero')) {
-    details.push('Acero Quirúrgico');
+    details.push('Acero');
   }
 
   if (text.includes('oro') || text.includes('enchapado') || text.includes('dorado')) {
@@ -83,7 +83,7 @@ function extractDetail(name: string, tags: string, desc: string): string {
     return details.slice(0, 2).join(' · ');
   }
 
-  return 'Plata 925 / Acero Quirúrgico';
+  return 'Plata 925 / Acero';
 }
 
 // Parsear precio numérico tolerante a formatos de TiendaNube y Argentina (ej: 160,000.00 o 160.000,00 o 25000)
