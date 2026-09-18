@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import { Category, Product } from '../types/product';
+import { Product } from '../types/product';
 import tiendanubeImageMap from '../data/tiendanubeImages.json';
 import { formatDescriptionWithSale } from './saleUtils';
 
@@ -14,7 +14,7 @@ function normalize(str: string): string {
 
 
 // Detectar categoría a partir del nombre o categoría de TiendaNube
-export function matchCategory(categoryStr: string, nameStr: string): Category {
+export function matchCategory(categoryStr: string, nameStr: string): string {
   const combined = normalize(`${categoryStr} ${nameStr}`);
 
   if (combined.includes('anillo') || combined.includes('alianza') || combined.includes('solitario') || combined.includes('sinfin')) {

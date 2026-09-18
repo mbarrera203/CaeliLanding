@@ -118,9 +118,11 @@ export function Storefront({ actionStyle }: StorefrontProps) {
 
     // 1. Filtro por material
     if (selectedMaterial !== 'Todos') {
+      const normTargetMat = selectedMaterial.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       filtered = filtered.filter((p) => {
         const { material } = getProductClassification(p);
-        return material === selectedMaterial;
+        const normItemMat = material.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return normItemMat === normTargetMat;
       });
     }
 

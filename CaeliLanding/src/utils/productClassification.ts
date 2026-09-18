@@ -60,23 +60,24 @@ export function getProductClassification(product: Product): Classification {
   }
 
   // 3. Inferencia inteligente a partir del nombre, detalle y categoría
-  const text = `${product.name} ${product.detail} ${product.legacyCategory || ''} ${product.description || ''}`.toLowerCase();
+  const rawText = `${product.name} ${product.detail} ${product.legacyCategory || ''} ${product.description || ''}`.toLowerCase();
+  const text = rawText.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
   let material = inferredMaterial || 'Plata';
   if (!inferredMaterial) {
     if (text.includes('acero blanco') || text.includes('(ab)')) {
       material = 'Acero Blanco';
-  } else if (text.includes('acero dorado') || text.includes('dorado') || text.includes('oro')) {
-    material = 'Acero Dorado';
-  } else if (text.includes('joyero') || text.includes('traba') || text.includes('billetera') || text.includes('perfume')) {
-    material = 'Cositas Varias :)';
-  } else if (text.includes('cristal')) {
-    material = 'Collares Cristal';
-  } else if (text.includes('fantasia') || text.includes('fantasía')) {
-    material = 'Fantasía';
-  } else if (text.includes('plata')) {
-    material = 'Plata';
-  }
+    } else if (text.includes('acero dorado') || text.includes('dorado') || text.includes('oro')) {
+      material = 'Acero Dorado';
+    } else if (text.includes('joyero') || text.includes('traba') || text.includes('billetera') || text.includes('perfume')) {
+      material = 'Cositas Varias :)';
+    } else if (text.includes('cristal')) {
+      material = 'Collares Cristal';
+    } else if (text.includes('fantasia')) {
+      material = 'Fantasía';
+    } else if (text.includes('plata')) {
+      material = 'Plata';
+    }
   }
 
   let subcategory = 'Aros';
@@ -113,7 +114,11 @@ export function getProductClassification(product: Product): Classification {
  * Normaliza nombres de subcategorías para comparar (ej: 'Cadenas y collares' vs 'Collares y Cadenas')
  */
 export function normalizeSubcategory(sub: string): string {
-  const s = sub.toLowerCase().trim();
+  const s = sub
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
   if (s.includes('aro') || s.includes('arete')) return 'Aros';
   if (s.includes('collar') || s.includes('cadena') || s.includes('choker') || s.includes('chocker')) return 'Collares y Cadenas';
   if (s.includes('pulsera') || s.includes('brazalete')) return 'Pulseras';

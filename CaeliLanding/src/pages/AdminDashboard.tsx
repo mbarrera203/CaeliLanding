@@ -111,9 +111,11 @@ export function AdminDashboard() {
 
 
     if (selectedMaterial !== 'Todos') {
+      const normTargetMat = selectedMaterial.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       result = result.filter((item) => {
         const { material } = getProductClassification(item);
-        return material === selectedMaterial;
+        const normItemMat = material.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return normItemMat === normTargetMat;
       });
     }
 
