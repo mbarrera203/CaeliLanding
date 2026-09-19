@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeftIcon, ChevronRightIcon, X } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon, Share2, Check } from 'lucide-react';
 import { WhatsAppIcon } from '../icons/WhatsAppIcon';
 import { Product } from '../../types/product';
 import { formatPrice, orderLink } from '../../utils/whatsapp';
@@ -15,69 +14,7 @@ interface ProductCardProps {
   featured?: boolean;
 }
 
-function ImageModal({ images, initialIndex, onClose }: { images: string[], initialIndex: number, onClose: () => void }) {
-  const [index, setIndex] = useState(initialIndex);
-  
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = 'unset'; };
-  }, []);
-
-  const next = (e: React.MouseEvent) => { e.stopPropagation(); setIndex((prev) => (prev + 1) % images.length); };
-  const prev = (e: React.MouseEvent) => { e.stopPropagation(); setIndex((prev) => (prev - 1 + images.length) % images.length); };
-
-  return createPortal(
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-ivory/80 backdrop-blur-md p-4 sm:p-8 select-none touch-none"
-      onClick={onClose}
-    >
-      <button onClick={onClose} className="absolute top-4 right-4 sm:top-6 sm:right-6 text-ink/70 hover:text-ink z-50 p-2 rounded-full bg-white/50 hover:bg-white/80 transition-colors shadow-sm">
-        <X className="w-6 h-6 sm:w-8 sm:h-8" />
-      </button>
-
-      {images.length > 1 && (
-        <button onClick={prev} className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 text-ink/70 hover:text-ink p-2 sm:p-3 z-50 rounded-full bg-white/50 hover:bg-white/80 transition-colors shadow-sm">
-          <ChevronLeftIcon className="w-8 h-8 sm:w-10 sm:h-10" />
-        </button>
-      )}
-
-      {images.length > 1 && (
-        <button onClick={next} className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 text-ink/70 hover:text-ink p-2 sm:p-3 z-50 rounded-full bg-white/50 hover:bg-white/80 transition-colors shadow-sm">
-          <ChevronRightIcon className="w-8 h-8 sm:w-10 sm:h-10" />
-        </button>
-      )}
-
-      <AnimatePresence mode="wait">
-        <motion.img
-          key={index}
-          src={images[index]}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.2 }}
-          className="max-w-full max-h-[85vh] sm:max-h-[90vh] object-contain rounded-xl shadow-2xl"
-          onClick={(e) => e.stopPropagation()}
-        />
-      </AnimatePresence>
-
-      {images.length > 1 && (
-         <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2 z-50">
-           {images.map((_, i) => (
-             <button
-               key={i}
-               onClick={(e) => { e.stopPropagation(); setIndex(i); }}
-               className={['h-1.5 rounded-full transition-all duration-300', i === index ? 'w-6 bg-ink' : 'w-2 bg-ink/30 hover:bg-ink/50'].join(' ')}
-             />
-           ))}
-         </div>
-      )}
-    </motion.div>,
-    document.body
-  );
-}
+import { ProductDetailModal } from './ProductDetailModal';
 
 export function ProductCard({
   product,
@@ -87,8 +24,31 @@ export function ProductCard({
 }: ProductCardProps) {
   const [imgIndex, setImgIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const soldOut = !product.active || product.stock === 0;
   const hasMultipleImages = product.images && product.images.length > 1;
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = `${window.location.origin}/?p=${product.id}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Caeli - ${product.name}`,
+          text: `Mirá esta joya de Caeli: ${product.name}`,
+          url: url,
+        });
+      } catch (err) {
+        console.log('Error al compartir', err);
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const nextImage = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -230,7 +190,7 @@ export function ProductCard({
       {/* Info estática de la tarjeta */}
       <div className="flex flex-col p-4 bg-white z-20 relative">
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <div className="pr-1">
             <h3 className="font-serif text-[17px] font-medium leading-tight text-ink">
               {product.name}
             </h3>
@@ -239,6 +199,13 @@ export function ProductCard({
             </p>
           </div>
           <div className="shrink-0 flex flex-col items-end">
+            <button
+              onClick={handleShare}
+              className="p-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-ink/60 hover:text-ink transition-colors mb-1 shadow-sm border border-stone-200/60"
+              title="Compartir joya"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5" />}
+            </button>
             {product.onSale && product.originalPrice && product.originalPrice > product.price ? (
               <>
                 <span className="text-[12px] line-through text-stone-400 tabular-nums leading-none">
@@ -260,9 +227,8 @@ export function ProductCard({
 
       <AnimatePresence>
         {isModalOpen && (
-          <ImageModal
-            images={product.images}
-            initialIndex={imgIndex}
+          <ProductDetailModal
+            product={product}
             onClose={() => setIsModalOpen(false)}
           />
         )}

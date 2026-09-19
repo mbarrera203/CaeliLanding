@@ -9,6 +9,7 @@ import {
   ProductCard,
   CardActionStyle,
 } from '../components/storefront/ProductCard';
+import { ProductDetailModal } from '../components/storefront/ProductDetailModal';
 import { WhatsAppBubble } from '../components/storefront/WhatsAppBubble';
 import { Material, Product } from '../types/product';
 import { getProductClassification, normalizeSubcategory } from '../utils/productClassification';
@@ -28,6 +29,15 @@ export function Storefront({ actionStyle }: StorefrontProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [onlyOffers, setOnlyOffers] = useState(false);
   const [visibleCount, setVisibleCount] = useState(12);
+  const [sharedProductId, setSharedProductId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get('p');
+    if (p) {
+      setSharedProductId(p);
+    }
+  }, []);
 
   useEffect(() => {
     setVisibleCount(12);
@@ -387,6 +397,20 @@ export function Storefront({ actionStyle }: StorefrontProps) {
       </footer>
 
       <WhatsAppBubble />
+      
+      <AnimatePresence>
+        {sharedProductId && catalog.find(p => p.id === sharedProductId) && (
+          <ProductDetailModal
+            product={catalog.find(p => p.id === sharedProductId)!}
+            onClose={() => {
+              setSharedProductId(null);
+              const url = new URL(window.location.href);
+              url.searchParams.delete('p');
+              window.history.replaceState({}, '', url.toString());
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
