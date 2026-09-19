@@ -7,6 +7,7 @@ import { Product, Material } from '../../types/product';
 import { getProductClassification } from '../../utils/productClassification';
 import { useCategories } from '../../hooks/useCategories';
 import { calculateDiscountPrice, calculateDiscountPercentage } from '../../utils/saleUtils';
+import { createSlug } from '../../utils/slug';
 
 interface InventoryTableProps {
   items: Product[];
@@ -37,7 +38,8 @@ export function InventoryTable({
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
 
   const handleCopyLink = async (item: Product) => {
-    const productLink = `${window.location.origin}/?p=${item.id}`;
+    const slug = createSlug(item.name);
+    const productLink = `${window.location.origin}/?p=${slug}`;
     const priceText = item.onSale && item.originalPrice && item.originalPrice > item.price
       ? `$${item.price.toLocaleString('es-AR')} (oferta)`
       : `$${item.price.toLocaleString('es-AR')}`;

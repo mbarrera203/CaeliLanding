@@ -1,4 +1,5 @@
 import { Product } from '../types/product';
+import { createSlug } from './slug';
 
 /** Número de WhatsApp de la tienda en Argentina (+54 9 ...). */
 export const WHATSAPP_NUMBER = '5492622532989';
@@ -19,7 +20,8 @@ export function orderLink(product: Product): string {
   const idShort = product.id.split('-')[0]; // Primer bloque del UUID para referencia rápida
   const imageUrl = product.images?.[0] || '';
 
-    const productLink = `${window.location.origin}/?p=${product.id}`;
+    const slug = createSlug(product.name);
+    const productLink = `${window.location.origin}/?p=${slug}`;
 
     const messageLines = [
       `¡Hola Caeli! 🌸 Me gustaría consultar por este producto:`,

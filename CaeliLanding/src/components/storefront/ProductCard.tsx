@@ -4,6 +4,7 @@ import { ChevronLeftIcon, ChevronRightIcon, Share2, Check } from 'lucide-react';
 import { WhatsAppIcon } from '../icons/WhatsAppIcon';
 import { Product } from '../../types/product';
 import { formatPrice, orderLink } from '../../utils/whatsapp';
+import { createSlug } from '../../utils/slug';
 
 export type CardActionStyle = 'soft' | 'solid';
 
@@ -31,7 +32,8 @@ export function ProductCard({
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const url = `${window.location.origin}/?p=${product.id}`;
+    const slug = createSlug(product.name);
+    const url = `${window.location.origin}/?p=${slug}`;
     
     if (navigator.share) {
       try {

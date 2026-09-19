@@ -5,6 +5,7 @@ import { ChevronLeftIcon, ChevronRightIcon, X, Share2, Check } from 'lucide-reac
 import { WhatsAppIcon } from '../icons/WhatsAppIcon';
 import { Product } from '../../types/product';
 import { formatPrice, orderLink } from '../../utils/whatsapp';
+import { createSlug } from '../../utils/slug';
 
 interface ProductDetailModalProps {
   product: Product;
@@ -33,7 +34,8 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/?p=${product.id}`;
+    const slug = createSlug(product.name);
+    const url = `${window.location.origin}/?p=${slug}`;
     
     if (navigator.share) {
       try {

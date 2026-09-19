@@ -16,6 +16,7 @@ import { getProductClassification, normalizeSubcategory } from '../utils/product
 import { WHATSAPP_DISPLAY, whatsappLink } from '../utils/whatsapp';
 import { supabase } from '../lib/supabase';
 import { parseSaleInfo } from '../utils/saleUtils';
+import { createSlug } from '../utils/slug';
 
 interface StorefrontProps {
   actionStyle: CardActionStyle;
@@ -399,9 +400,9 @@ export function Storefront({ actionStyle }: StorefrontProps) {
       <WhatsAppBubble />
       
       <AnimatePresence>
-        {sharedProductId && catalog.find(p => p.id === sharedProductId) && (
+        {sharedProductId && catalog.find(p => p.id === sharedProductId || createSlug(p.name) === sharedProductId) && (
           <ProductDetailModal
-            product={catalog.find(p => p.id === sharedProductId)!}
+            product={catalog.find(p => p.id === sharedProductId || createSlug(p.name) === sharedProductId)!}
             onClose={() => {
               setSharedProductId(null);
               const url = new URL(window.location.href);
