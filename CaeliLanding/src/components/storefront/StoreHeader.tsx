@@ -27,7 +27,7 @@ export function StoreHeader() {
             <img
               src="/LogoCaeli-removebg-preview.png"
               alt="Caeli Joyas y Accesorios"
-              className="h-16 sm:h-20 w-auto max-h-[74px] object-contain drop-shadow-xs"
+              className="h-[72px] sm:h-[84px] w-auto object-contain drop-shadow-xs scale-110 sm:scale-100"
             />
           </Link>
         </div>

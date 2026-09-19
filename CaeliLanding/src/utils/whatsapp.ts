@@ -44,7 +44,7 @@ export function orderLink(product: Product): string {
 export function cartCheckoutLink(items: { product: Product, quantity: number }[], totalPrice: number): string {
   if (items.length === 0) return whatsappLink('¡Hola Caeli!');
 
-  const intro = `¡Hola Caeli! 🌸 Me gustaría hacer un pedido con los siguientes productos:`;
+  const intro = `¡Hola Caeli! Me gustaría hacer un pedido con los siguientes productos:`;
 
   const itemsText = items.map(item => {
     const priceText = item.product.onSale && item.product.originalPrice && item.product.originalPrice > item.product.price

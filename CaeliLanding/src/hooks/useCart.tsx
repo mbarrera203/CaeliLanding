@@ -51,7 +51,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return [...currentItems, { product, quantity: 1 }];
     });
-    setIsCartOpen(true);
+    // No abrimos el carrito automáticamente para no interrumpir
+    // setIsCartOpen(true);
   };
 
   const removeItem = (productId: string) => {
