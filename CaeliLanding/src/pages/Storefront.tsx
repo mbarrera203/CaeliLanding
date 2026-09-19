@@ -25,12 +25,17 @@ interface StorefrontProps {
 }
 
 export function Storefront({ actionStyle }: StorefrontProps) {
+  const initialParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
   const [catalog, setCatalog] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMaterial, setSelectedMaterial] = useState<'Todos' | Material>('Todos');
-  const [selectedSubcategory, setSelectedSubcategory] = useState<'Todos' | string>('Todos');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [onlyOffers, setOnlyOffers] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState<'Todos' | Material>(
+    (initialParams.get('material') as Material) || 'Todos'
+  );
+  const [selectedSubcategory, setSelectedSubcategory] = useState<'Todos' | string>(
+    initialParams.get('subcategory') || 'Todos'
+  );
+  const [searchQuery, setSearchQuery] = useState(initialParams.get('q') || '');
+  const [onlyOffers, setOnlyOffers] = useState(initialParams.get('offers') === 'true');
   const [visibleCount, setVisibleCount] = useState(12);
   const [sharedProductId, setSharedProductId] = useState<string | null>(null);
 
@@ -41,6 +46,35 @@ export function Storefront({ actionStyle }: StorefrontProps) {
       setSharedProductId(p);
     }
   }, []);
+
+  // Sincronizar filtros con la URL para permitir compartir links
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    let changed = false;
+
+    const updateParam = (key: string, value: string | null) => {
+      if (value) {
+        if (url.searchParams.get(key) !== value) {
+          url.searchParams.set(key, value);
+          changed = true;
+        }
+      } else {
+        if (url.searchParams.has(key)) {
+          url.searchParams.delete(key);
+          changed = true;
+        }
+      }
+    };
+
+    updateParam('material', selectedMaterial !== 'Todos' ? selectedMaterial : null);
+    updateParam('subcategory', selectedSubcategory !== 'Todos' ? selectedSubcategory : null);
+    updateParam('q', searchQuery || null);
+    updateParam('offers', onlyOffers ? 'true' : null);
+
+    if (changed) {
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [selectedMaterial, selectedSubcategory, searchQuery, onlyOffers]);
 
   useEffect(() => {
     setVisibleCount(12);
