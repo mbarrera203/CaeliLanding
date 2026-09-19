@@ -19,18 +19,20 @@ export function orderLink(product: Product): string {
   const idShort = product.id.split('-')[0]; // Primer bloque del UUID para referencia rápida
   const imageUrl = product.images?.[0] || '';
 
-  const messageLines = [
-    `¡Hola Caeli! 🌸 Me gustaría consultar por este producto:`,
-    '',
-    `*${product.name}*`,
-    materialText,
-    `Precio: ${priceText}`,
-    `Ref: #${idShort}`,
-    '',
-    `¿Tienen stock disponible?`,
-    '',
-    imageUrl ? `Podés ver la foto acá: ${imageUrl}` : ''
-  ];
+    const productLink = `${window.location.origin}/?p=${product.id}`;
+
+    const messageLines = [
+      `¡Hola Caeli! 🌸 Me gustaría consultar por este producto:`,
+      '',
+      `*${product.name}*`,
+      materialText,
+      `Precio: ${priceText}`,
+      `Ref: #${idShort}`,
+      '',
+      `¿Tienen stock disponible?`,
+      '',
+      `Link directo: ${productLink}`
+    ];
 
   const message = messageLines.filter(line => line !== null).join('\n').trim();
 

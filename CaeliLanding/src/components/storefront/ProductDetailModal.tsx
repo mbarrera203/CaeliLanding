@@ -68,13 +68,23 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
         className="relative w-full max-w-4xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col sm:flex-row max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Botón de cerrar (Absoluto) */}
-        <button 
-          onClick={onClose} 
-          className="absolute top-4 right-4 sm:top-5 sm:right-5 z-50 p-2.5 rounded-full bg-white/80 backdrop-blur-md text-ink/70 hover:text-ink hover:bg-white shadow-sm transition-all"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        {/* Botones de acción superior (Absolutos) */}
+        <div className="absolute top-4 right-4 sm:top-5 sm:right-5 z-50 flex items-center gap-2.5">
+          <button 
+            onClick={handleShare} 
+            className="p-2.5 rounded-full bg-white/80 backdrop-blur-md text-ink/70 hover:text-ink hover:bg-white shadow-sm transition-all tooltip-trigger"
+            title="Compartir joya"
+          >
+            {copied ? <Check className="w-5 h-5 text-emerald-600" /> : <Share2 className="w-5 h-5" />}
+          </button>
+          <button 
+            onClick={onClose} 
+            className="p-2.5 rounded-full bg-white/80 backdrop-blur-md text-ink/70 hover:text-ink hover:bg-white shadow-sm transition-all"
+            title="Cerrar"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
         {/* Sección de Imagen */}
         <div className="relative w-full sm:w-1/2 bg-sand flex-shrink-0 h-[45vh] sm:h-[75vh]">
@@ -133,17 +143,10 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
         {/* Sección de Info */}
         <div className="flex-1 flex flex-col p-6 sm:p-10 overflow-y-auto">
           <div className="flex-1">
-            <div className="flex items-start justify-between gap-4 mb-2">
+            <div className="mb-2 sm:pr-14">
               <h2 className="font-serif text-2xl sm:text-3xl text-ink leading-tight">
                 {product.name}
               </h2>
-              <button
-                onClick={handleShare}
-                className="shrink-0 p-2.5 rounded-full border border-line hover:border-gold hover:text-gold text-muted transition-colors flex items-center justify-center bg-white shadow-sm tooltip-trigger"
-                title="Compartir joya"
-              >
-                {copied ? <Check className="w-5 h-5 text-emerald-600" /> : <Share2 className="w-5 h-5" />}
-              </button>
             </div>
             
             <p className="text-[14px] text-muted mb-6">

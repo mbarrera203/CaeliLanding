@@ -1,6 +1,6 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckIcon, Trash2Icon, PlusIcon, XIcon, Tag } from 'lucide-react';
+import { CheckIcon, Trash2Icon, PlusIcon, XIcon, Tag, Share2 } from 'lucide-react';
 import { InlineField } from './InlineField';
 import { StatusToggle } from './StatusToggle';
 import { Product, Material } from '../../types/product';
@@ -34,6 +34,31 @@ export function InventoryTable({
   onRemove,
 }: InventoryTableProps) {
   const { categories, subcategories } = useCategories();
+  const [copiedId, setCopiedId] = React.useState<string | null>(null);
+
+  const handleCopyLink = async (item: Product) => {
+    const productLink = `${window.location.origin}/?p=${item.id}`;
+    const priceText = item.onSale && item.originalPrice && item.originalPrice > item.price
+      ? `$${item.price.toLocaleString('es-AR')} (oferta)`
+      : `$${item.price.toLocaleString('es-AR')}`;
+      
+    const message = `¡Mirá esta joya de Caeli! ✨\n*${item.name}*\nPrecio: ${priceText}\n\nPodés ver todas las fotos y detalles acá:\n${productLink}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Caeli - ${item.name}`,
+          text: message,
+        });
+      } catch (err) {
+        console.log('Error al compartir', err);
+      }
+    } else {
+      await navigator.clipboard.writeText(message);
+      setCopiedId(item.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, id: string) => {
     const files = Array.from(e.target.files ?? []);
@@ -412,15 +437,31 @@ export function InventoryTable({
                   )}
                 </AnimatePresence>
 
-                <button
-                  type="button"
-                  onClick={() => onRemove(item.id)}
-                  aria-label={`Eliminar ${item.name}`}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50/60 px-5 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100 hover:border-rose-300 transition-colors cursor-pointer active:scale-95"
-                >
-                  <Trash2Icon className="h-4 w-4 text-rose-500" aria-hidden="true" />
-                  <span>Eliminar producto</span>
-                </button>
+                <div className="flex items-center gap-2 w-full">
+                  <button
+                    type="button"
+                    onClick={() => handleCopyLink(item)}
+                    aria-label={`Compartir ${item.name}`}
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-white px-5 py-2 text-xs font-medium text-ink hover:bg-stone-50 hover:border-line transition-colors cursor-pointer active:scale-95 shadow-sm"
+                  >
+                    {copiedId === item.id ? (
+                      <CheckIcon className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                    ) : (
+                      <Share2 className="h-4 w-4 text-ink/70" aria-hidden="true" />
+                    )}
+                    <span>Compartir link</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onRemove(item.id)}
+                    aria-label={`Eliminar ${item.name}`}
+                    className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50/60 p-2 text-rose-700 hover:bg-rose-100 hover:border-rose-300 transition-colors cursor-pointer active:scale-95"
+                    title="Eliminar producto"
+                  >
+                    <Trash2Icon className="h-4 w-4 text-rose-500" aria-hidden="true" />
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -687,6 +728,19 @@ export function InventoryTable({
                           </motion.span>
                         )}
                       </AnimatePresence>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyLink(item)}
+                        aria-label={`Compartir ${item.name}`}
+                        className="rounded-lg p-2 text-muted opacity-0 transition-colors duration-150 ease-soft hover:bg-stone-100 hover:text-ink focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/20 group-hover:opacity-100"
+                        title="Copiar mensaje de venta"
+                      >
+                        {copiedId === item.id ? (
+                          <CheckIcon className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                        ) : (
+                          <Share2 className="h-4 w-4" aria-hidden="true" />
+                        )}
+                      </button>
                       <button
                         type="button"
                         onClick={() => onRemove(item.id)}
