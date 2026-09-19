@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeftIcon, ChevronRightIcon, X, Share2, Check } from 'lucide-react';
-import { WhatsAppIcon } from '../icons/WhatsAppIcon';
+import { ChevronLeftIcon, ChevronRightIcon, X, Share2, Check, ShoppingBag } from 'lucide-react';
 import { Product } from '../../types/product';
-import { formatPrice, orderLink } from '../../utils/whatsapp';
+import { formatPrice } from '../../utils/whatsapp';
 import { createSlug } from '../../utils/slug';
+import { useCart } from '../../hooks/useCart';
 
 interface ProductDetailModalProps {
   product: Product;
@@ -15,6 +15,7 @@ interface ProductDetailModalProps {
 export function ProductDetailModal({ product, onClose }: ProductDetailModalProps) {
   const [imgIndex, setImgIndex] = useState(0);
   const [copied, setCopied] = useState(false);
+  const { addItem } = useCart();
   const soldOut = !product.active || product.stock === 0;
 
   useEffect(() => {
@@ -36,19 +37,19 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
     e.stopPropagation();
     const slug = createSlug(product.name);
     const url = `${window.location.origin}/?p=${slug}`;
+    const shareText = `¡Mirá esta joya de Caeli! ✨\n${product.name}\n\nPodés verla acá:\n${url}`;
     
     if (navigator.share) {
       try {
         await navigator.share({
           title: `Caeli - ${product.name}`,
-          text: `Mirá esta joya de Caeli: ${product.name}`,
-          url: url,
+          text: shareText,
         });
       } catch (err) {
         console.log('Error al compartir', err);
       }
     } else {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(shareText);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -198,15 +199,16 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
                 No disponible por el momento
               </div>
             ) : (
-              <a
-                href={orderLink(product)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-3 rounded-full bg-whatsapp px-6 py-4 text-[15px] font-medium text-white shadow-lg shadow-whatsapp/30 transition-all hover:bg-whatsapp-deep hover:shadow-xl hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-whatsapp/50 focus:ring-offset-2"
+              <button
+                onClick={() => {
+                  addItem(product);
+                  onClose();
+                }}
+                className="flex w-full items-center justify-center gap-3 rounded-full bg-ink px-6 py-4 text-[15px] font-medium text-white shadow-lg shadow-ink/20 transition-all hover:bg-ink-light hover:shadow-xl hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-ink/50 focus:ring-offset-2"
               >
-                <WhatsAppIcon className="w-5 h-5" />
-                Pedir por WhatsApp
-              </a>
+                <ShoppingBag className="w-5 h-5" />
+                Agregar al carrito
+              </button>
             )}
             
             <p className="mt-4 text-center text-[12px] text-muted flex items-center justify-center gap-1.5">

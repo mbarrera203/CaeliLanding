@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeftIcon, ChevronRightIcon, Share2, Check } from 'lucide-react';
-import { WhatsAppIcon } from '../icons/WhatsAppIcon';
+import { ChevronLeftIcon, ChevronRightIcon, Share2, Check, ShoppingBag } from 'lucide-react';
 import { Product } from '../../types/product';
-import { formatPrice, orderLink } from '../../utils/whatsapp';
+import { formatPrice } from '../../utils/whatsapp';
 import { createSlug } from '../../utils/slug';
+import { useCart } from '../../hooks/useCart';
 
 export type CardActionStyle = 'soft' | 'solid';
 
@@ -26,27 +26,34 @@ export function ProductCard({
   const [imgIndex, setImgIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { addItem } = useCart();
   const soldOut = !product.active || product.stock === 0;
   const hasMultipleImages = product.images && product.images.length > 1;
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addItem(product);
+  };
 
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const slug = createSlug(product.name);
     const url = `${window.location.origin}/?p=${slug}`;
+    const shareText = `¡Mirá esta joya de Caeli! ✨\n${product.name}\n\nPodés verla acá:\n${url}`;
     
     if (navigator.share) {
       try {
         await navigator.share({
           title: `Caeli - ${product.name}`,
-          text: `Mirá esta joya de Caeli: ${product.name}`,
-          url: url,
+          text: shareText,
         });
       } catch (err) {
         console.log('Error al compartir', err);
       }
     } else {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(shareText);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -142,21 +149,18 @@ export function ProductCard({
                 No disponible
               </span>
             ) : (
-              <a
-                href={orderLink(product)}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
+              <button
+                onClick={handleAddToCart}
                 className={[
-                  'flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-[13px] font-medium transition-all duration-500 ease-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-whatsapp/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory',
+                  'flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-[13px] font-medium transition-all duration-500 ease-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory cursor-pointer',
                   actionStyle === 'solid'
-                    ? 'border-whatsapp bg-whatsapp text-white hover:border-whatsapp-deep hover:bg-whatsapp-deep'
-                    : 'border-whatsapp/30 bg-whatsapp-tint text-whatsapp-deep hover:border-whatsapp hover:bg-whatsapp hover:text-white',
+                    ? 'border-ink bg-ink text-white hover:bg-ink-light'
+                    : 'border-ink/30 bg-stone-100 text-ink hover:bg-stone-200',
                 ].join(' ')}
               >
-                <WhatsAppIcon className="h-4 w-4" />
-                Pedir ahora
-              </a>
+                <ShoppingBag className="h-4 w-4" />
+                Agregar al carrito
+              </button>
             )}
           </div>
         </div>

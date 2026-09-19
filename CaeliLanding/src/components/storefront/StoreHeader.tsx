@@ -5,7 +5,7 @@ import { whatsappLink, WHATSAPP_DISPLAY } from '../../utils/whatsapp';
 
 export function StoreHeader() {
   return (
-    <header className="sticky top-0 z-50 h-[76px] sm:h-[90px] border-b border-line/70 bg-[#fdfcfa] shadow-[0_1px_4px_rgba(44,36,22,0.03)]">
+    <header className="sticky top-0 z-50 h-[84px] sm:h-[90px] border-b border-line/70 bg-[#fdfcfa] shadow-[0_1px_4px_rgba(44,36,22,0.03)]">
       <div className="mx-auto flex h-full max-w-[1240px] items-center justify-between px-4 sm:px-8 relative">
         
         {/* Izquierda: Contacto (WhatsApp) */}
@@ -27,21 +27,13 @@ export function StoreHeader() {
             <img
               src="/LogoCaeli-removebg-preview.png"
               alt="Caeli Joyas y Accesorios"
-              className="h-14 sm:h-20 w-auto max-h-[58px] sm:max-h-[74px] object-contain drop-shadow-xs"
+              className="h-16 sm:h-20 w-auto max-h-[74px] object-contain drop-shadow-xs"
             />
           </Link>
         </div>
 
-        {/* Derecha: Admin */}
-        <div className="flex-1 flex justify-end">
-          <Link
-            to="/admin"
-            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white/80 px-3.5 py-1.5 text-[12px] text-muted transition-all hover:bg-white hover:border-ink/20 hover:text-ink hover:shadow-xs"
-          >
-            <LockIcon className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Admin</span>
-          </Link>
-        </div>
+        {/* Derecha: Espacio para centrar el logo */}
+        <div className="flex-1 flex justify-end" />
 
 
       </div>

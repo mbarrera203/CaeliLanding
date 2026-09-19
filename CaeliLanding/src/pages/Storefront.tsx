@@ -11,6 +11,8 @@ import {
 } from '../components/storefront/ProductCard';
 import { ProductDetailModal } from '../components/storefront/ProductDetailModal';
 import { WhatsAppBubble } from '../components/storefront/WhatsAppBubble';
+import { FloatingCartButton } from '../components/storefront/FloatingCartButton';
+import { CartDrawer } from '../components/storefront/CartDrawer';
 import { Material, Product } from '../types/product';
 import { getProductClassification, normalizeSubcategory } from '../utils/productClassification';
 import { WHATSAPP_DISPLAY, whatsappLink } from '../utils/whatsapp';
@@ -376,16 +378,8 @@ export function Storefront({ actionStyle }: StorefrontProps) {
               />
             </div>
 
-            {/* Derecha: Admin */}
-            <div className="flex-1 flex justify-center sm:justify-end">
-              <Link
-                to="/admin"
-                className="inline-flex items-center gap-1.5 rounded-full border border-line/80 bg-white/50 px-4 py-1.5 text-[12px] text-muted transition-all hover:bg-white hover:border-ink/20 hover:text-ink hover:shadow-sm"
-              >
-                <LockIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                Admin
-              </Link>
-            </div>
+            {/* Derecha: Espacio vacío para equilibrar el logo */}
+            <div className="flex-1 hidden sm:flex justify-end" />
           </div>
 
           {/* Línea decorativa */}
@@ -398,6 +392,8 @@ export function Storefront({ actionStyle }: StorefrontProps) {
       </footer>
 
       <WhatsAppBubble />
+      <FloatingCartButton />
+      <CartDrawer />
       
       <AnimatePresence>
         {sharedProductId && catalog.find(p => p.id === sharedProductId || createSlug(p.name) === sharedProductId) && (
