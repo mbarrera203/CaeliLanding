@@ -36,6 +36,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
   );
   const [searchQuery, setSearchQuery] = useState(initialParams.get('q') || '');
   const [onlyOffers, setOnlyOffers] = useState(initialParams.get('offers') === 'true');
+  const [sortBy, setSortBy] = useState(initialParams.get('sort') || 'newest');
   const [visibleCount, setVisibleCount] = useState(12);
   const [sharedProductId, setSharedProductId] = useState<string | null>(null);
 
@@ -70,15 +71,16 @@ export function Storefront({ actionStyle }: StorefrontProps) {
     updateParam('subcategory', selectedSubcategory !== 'Todos' ? selectedSubcategory : null);
     updateParam('q', searchQuery || null);
     updateParam('offers', onlyOffers ? 'true' : null);
+    updateParam('sort', sortBy !== 'newest' ? sortBy : null);
 
     if (changed) {
       window.history.replaceState({}, '', url.toString());
     }
-  }, [selectedMaterial, selectedSubcategory, searchQuery, onlyOffers]);
+  }, [selectedMaterial, selectedSubcategory, searchQuery, onlyOffers, sortBy]);
 
   useEffect(() => {
     setVisibleCount(12);
-  }, [selectedMaterial, selectedSubcategory, searchQuery, onlyOffers]);
+  }, [selectedMaterial, selectedSubcategory, searchQuery, onlyOffers, sortBy]);
 
   useEffect(() => {
     async function loadStoreCatalog() {
@@ -90,7 +92,9 @@ export function Storefront({ actionStyle }: StorefrontProps) {
           .order('created_at', { ascending: false });
 
         if (!error && data && data.length > 0) {
-          const liveProducts: Product[] = data.map((row: any) => {
+          const liveProducts: Product[] = data
+            .filter((row: any) => Number(row.price) > 0)
+            .map((row: any) => {
             const { onSale, originalPrice, discountPercentage, cleanDescription } = parseSaleInfo(row.description, Number(row.price));
             const rawProduct: Product = {
               id: String(row.id),
@@ -108,6 +112,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
               featured: Boolean(row.featured),
               material: row.material,
               subcategory: row.subcategory,
+              createdAt: row.created_at,
             };
             const classification = getProductClassification(rawProduct);
             return {
@@ -203,19 +208,27 @@ export function Storefront({ actionStyle }: StorefrontProps) {
     return [...filtered].sort((a, b) => {
       const aAvailable = a.active && a.stock > 0 ? 1 : 0;
       const bAvailable = b.active && b.stock > 0 ? 1 : 0;
+      
+      // Regla general: siempre priorizar disponibilidad independientemente del sort
       if (bAvailable !== aAvailable) {
         return bAvailable - aAvailable;
       }
-      if (aAvailable === 1) {
-        const aFeatured = a.featured ? 1 : 0;
-        const bFeatured = b.featured ? 1 : 0;
-        if (bFeatured !== aFeatured) {
-          return bFeatured - aFeatured;
-        }
+
+      // Si ambos están disponibles (o ambos agotados), aplicar el sortBy
+      if (sortBy === 'price_asc') {
+        return a.price - b.price;
       }
-      return 0;
+      if (sortBy === 'price_desc') {
+        return b.price - a.price;
+      }
+      if (sortBy === 'oldest') {
+        return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+      }
+
+      // Default: newest
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     });
-  }, [catalog, selectedMaterial, selectedSubcategory, searchQuery, onlyOffers]);
+  }, [catalog, selectedMaterial, selectedSubcategory, searchQuery, onlyOffers, sortBy]);
 
 
 
@@ -317,11 +330,14 @@ export function Storefront({ actionStyle }: StorefrontProps) {
           onSelectMaterial={setSelectedMaterial}
           onSelectSubcategory={setSelectedSubcategory}
           onSearchChange={setSearchQuery}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
           onReset={() => {
             setSelectedMaterial('Todos');
             setSelectedSubcategory('Todos');
             setSearchQuery('');
             setOnlyOffers(false);
+            setSortBy('newest');
           }}
           materialCounts={materialCounts}
           subcategoryCounts={subcategoryCounts}
@@ -336,7 +352,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
         >
 
           {loading ? (
-            <div className="grid grid-cols-1 gap-x-5 gap-y-12 sm:grid-cols-2 md:grid-cols-3 md:gap-x-6 xl:grid-cols-4 xl:gap-x-8">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-12 md:grid-cols-3 md:gap-x-6 xl:grid-cols-4 xl:gap-x-8">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="animate-pulse flex flex-col rounded-2xl bg-white overflow-hidden shadow-sm border border-line/40">
                   <div className="aspect-[4/5] bg-stone-100" />
@@ -359,7 +375,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-x-5 gap-y-12 sm:grid-cols-2 md:grid-cols-3 md:gap-x-6 xl:grid-cols-4 xl:gap-x-8">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-12 md:grid-cols-3 md:gap-x-6 xl:grid-cols-4 xl:gap-x-8">
                 {visible.slice(0, visibleCount).map((product, index) => (
                   <ProductCard
                     key={product.id}

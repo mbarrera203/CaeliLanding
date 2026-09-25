@@ -49,4 +49,6 @@ export interface Product {
   featured?: boolean;
   /** True para piezas recién subidas desde la zona de carga del admin. */
   isDraft?: boolean;
+  /** Fecha de creación para ordenamiento */
+  createdAt?: string;
 }

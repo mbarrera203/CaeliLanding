@@ -14,6 +14,8 @@ export interface CategoryFilterProps {
   onSelectMaterial: (material: 'Todos' | Material) => void;
   onSelectSubcategory: (subcategory: 'Todos' | string) => void;
   onSearchChange: (query: string) => void;
+  sortBy: string;
+  onSortChange: (sort: string) => void;
   onReset: () => void;
   materialCounts: Record<string, number>;
   subcategoryCounts: Record<string, number>;
@@ -31,6 +33,8 @@ export function CategoryFilter({
   onSelectMaterial,
   onSelectSubcategory,
   onSearchChange,
+  sortBy,
+  onSortChange,
   onReset,
   materialCounts,
   subcategoryCounts,
@@ -38,8 +42,18 @@ export function CategoryFilter({
   totalAll,
 }: CategoryFilterProps) {
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
 
   const { categories, subcategories } = useCategories();
+
+  const sortOptions = [
+    { value: 'newest', label: 'Más recientes' },
+    { value: 'oldest', label: 'Más antiguos' },
+    { value: 'price_asc', label: 'Menor precio' },
+    { value: 'price_desc', label: 'Mayor precio' },
+  ];
+
+  const currentSortLabel = sortOptions.find(o => o.value === sortBy)?.label || 'Ordenar';
 
   // Subcategorías a mostrar según el material seleccionado (solo cuando se elige una categoría específica)
   const currentSubcategories = useMemo(() => {
@@ -88,24 +102,77 @@ export function CategoryFilter({
             )}
           </div>
 
-          {/* Botón para desplegar el menú completo estilo TiendaNube */}
-          <button
-            type="button"
-            onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
-            className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-all duration-200 border cursor-pointer ${
-              isMegaMenuOpen
-                ? 'bg-ink text-ivory border-ink shadow-sm'
-                : 'bg-white text-ink border-line/80 hover:border-ink/30 hover:bg-sand/40'
-            }`}
-          >
-            <LayoutGrid className="h-4 w-4 text-gold" />
-            <span>Ver menú por material y categoría</span>
-            {isMegaMenuOpen ? (
-              <ChevronUp className="h-3.5 w-3.5 opacity-70" />
-            ) : (
-              <ChevronDown className="h-3.5 w-3.5 opacity-70" />
-            )}
-          </button>
+          <div className="flex items-center gap-2 justify-end">
+            {/* Selector de Orden Custom */}
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsSortOpen(!isSortOpen)}
+                className={`inline-flex items-center justify-between min-w-[130px] sm:min-w-[140px] gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-all duration-200 border cursor-pointer ${
+                  isSortOpen
+                    ? 'bg-ink text-ivory border-ink shadow-sm'
+                    : 'bg-white text-ink border-line/80 hover:border-ink/30 hover:bg-sand/40'
+                }`}
+              >
+                <span>{currentSortLabel}</span>
+                {isSortOpen ? (
+                  <ChevronUp className="h-3.5 w-3.5 opacity-70" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                )}
+              </button>
+
+              <AnimatePresence>
+                {isSortOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-2 w-[160px] sm:w-[180px] rounded-2xl border border-line bg-white shadow-xl z-50 overflow-hidden"
+                  >
+                    <div className="flex flex-col py-1.5">
+                      {sortOptions.map(option => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            onSortChange(option.value);
+                            setIsSortOpen(false);
+                          }}
+                          className={`px-4 py-2 text-[13px] text-left transition-colors cursor-pointer hover:bg-sand/60 ${
+                            sortBy === option.value ? 'font-semibold text-ink bg-sand/30' : 'text-muted hover:text-ink'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Botón para desplegar el menú completo estilo TiendaNube */}
+            <button
+              type="button"
+              onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
+              className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-all duration-200 border cursor-pointer ${
+                isMegaMenuOpen
+                  ? 'bg-ink text-ivory border-ink shadow-sm'
+                  : 'bg-white text-ink border-line/80 hover:border-ink/30 hover:bg-sand/40'
+              }`}
+            >
+              <LayoutGrid className="h-4 w-4 text-gold hidden sm:block" />
+              <span className="hidden sm:inline">Ver menú</span>
+              <span className="sm:hidden">Menú</span>
+              {isMegaMenuOpen ? (
+                <ChevronUp className="h-3.5 w-3.5 opacity-70" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Fila 2: Selector de Material Principal (Nivel 1) */}

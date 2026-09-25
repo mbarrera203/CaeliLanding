@@ -59,15 +59,21 @@ export function ProductCard({
     }
   };
 
-  const nextImage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const [isDragging, setIsDragging] = useState(false);
+
+  const nextImage = (e?: React.MouseEvent | Event) => {
+    if (e && 'preventDefault' in e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setImgIndex((prev) => (prev + 1) % product.images.length);
   };
 
-  const prevImage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const prevImage = (e?: React.MouseEvent | Event) => {
+    if (e && 'preventDefault' in e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setImgIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
   };
 
@@ -86,11 +92,15 @@ export function ProductCard({
         {/* Contenedor de Imagen y Efecto Hover */}
         <div 
           className="relative aspect-[4/5] w-full overflow-hidden bg-sand cursor-pointer"
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            if (!isDragging) {
+              setIsModalOpen(true);
+            }
+          }}
         >
         {/* Carrusel Interno (Efecto de subida en hover) */}
         <div className="absolute inset-0 h-full w-full transition-transform duration-500 ease-soft group-hover:-translate-y-8">
-            <img
+            <motion.img
               key={imgIndex}
               src={product.images[imgIndex]}
               alt={product.name}
@@ -99,6 +109,23 @@ export function ProductCard({
                 'absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-soft group-hover:scale-[1.03]',
                 soldOut ? 'opacity-55' : '',
               ].join(' ')}
+              style={{ touchAction: 'pan-y' }}
+              onPanStart={() => setIsDragging(true)}
+              onPanEnd={(e, info) => {
+                if (!hasMultipleImages) {
+                  setTimeout(() => setIsDragging(false), 50);
+                  return;
+                }
+                const threshold = 30;
+                if (Math.abs(info.offset.x) > Math.abs(info.offset.y) && Math.abs(info.offset.x) > threshold) {
+                  if (info.offset.x < 0) {
+                    nextImage();
+                  } else {
+                    prevImage();
+                  }
+                }
+                setTimeout(() => setIsDragging(false), 50);
+              }}
             />
 
           {/* Controles del carrusel */}
