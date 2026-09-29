@@ -435,9 +435,22 @@ export function Storefront({ actionStyle }: StorefrontProps) {
           {/* Línea decorativa */}
           <div className="gold-line my-8 opacity-50" />
 
-          <p className="text-center text-[12px] text-muted">
-            © {new Date().getFullYear()} Caeli Joyas y Accesorios · Argentina
-          </p>
+          <div className="flex flex-col items-center gap-1.5">
+            <p className="text-center text-[12px] text-muted">
+              © {new Date().getFullYear()} Caeli Joyas y Accesorios · Argentina
+            </p>
+            <p className="text-center text-[11px] text-muted/70">
+              Desarrollado por{' '}
+              <a
+                href="https://www.linkedin.com/in/martin-barrera-negri-83898b9b/?isSelfProfile=true"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-gold transition-colors font-medium"
+              >
+                Martin Barrera Negri
+              </a>
+            </p>
+          </div>
         </div>
       </footer>
 
