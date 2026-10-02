@@ -73,7 +73,7 @@ export function TiendaNubeImportModal({ isOpen, onClose, onSuccess }: TiendaNube
         const rows = chunk.map((p: Product) => ({
           id: p.id,
           name: p.name,
-          category: p.category,
+          category: p.legacyCategory || p.subcategory || 'Accesorios',
           price: p.price,
           detail: p.detail,
           description: p.description,
@@ -114,9 +114,9 @@ export function TiendaNubeImportModal({ isOpen, onClose, onSuccess }: TiendaNube
     setProgress(0);
   };
 
-  // Resumen de categorías
   const categoryStats = result?.products.reduce((acc, p) => {
-    acc[p.category] = (acc[p.category] || 0) + 1;
+    const cat = p.legacyCategory || p.subcategory || 'Sin categoría';
+    acc[cat] = (acc[cat] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -278,7 +278,7 @@ export function TiendaNubeImportModal({ isOpen, onClose, onSuccess }: TiendaNube
                         />
                         <div className="min-w-0">
                           <p className="text-xs font-medium text-ink truncate">{p.name}</p>
-                          <p className="text-[11px] text-muted truncate">{p.category} · {p.images.length} fotos · Stock: {p.stock}</p>
+                          <p className="text-[11px] text-muted truncate">{p.legacyCategory || p.subcategory} · {p.images.length} fotos · Stock: {p.stock}</p>
                         </div>
                       </div>
                       <div className="text-right shrink-0">

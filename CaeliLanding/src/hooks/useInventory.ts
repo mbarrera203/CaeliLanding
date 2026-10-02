@@ -29,24 +29,81 @@ function nameFromFile(fileName: string): string {
     .slice(0, 40);
 }
 
+async function compressImage(file: File, maxWidth = 800, maxHeight = 800, quality = 0.8): Promise<File> {
+  if (!file.type.startsWith('image/')) return file;
+  
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
+                type: 'image/webp',
+                lastModified: Date.now(),
+              });
+              resolve(newFile);
+            } else {
+              resolve(file);
+            }
+          },
+          'image/webp',
+          quality
+        );
+      };
+      img.onerror = () => resolve(file);
+    };
+    reader.onerror = () => resolve(file);
+  });
+}
+
 // Subir una imagen a Supabase Storage bucket 'products'
 async function uploadFileToSupabase(file: File): Promise<string> {
   try {
-    const fileExt = file.name.split('.').pop() || 'jpg';
-    const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 20);
+    const compressedFile = await compressImage(file);
+    const fileExt = compressedFile.name.split('.').pop() || 'webp';
+    const cleanName = compressedFile.name.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 20);
     const fileName = `${Date.now()}_${cleanName}.${fileExt}`;
     const filePath = `items/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('products')
-      .upload(filePath, file, {
+      .upload(filePath, compressedFile, {
         cacheControl: '3600',
         upsert: false,
       });
 
     if (uploadError) {
       console.warn('No se pudo subir la foto a Supabase Storage, usando vista previa local:', uploadError);
-      return URL.createObjectURL(file);
+      return URL.createObjectURL(compressedFile);
     }
 
     const { data } = supabase.storage.from('products').getPublicUrl(filePath);

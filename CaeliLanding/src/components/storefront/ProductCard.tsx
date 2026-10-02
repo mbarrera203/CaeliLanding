@@ -104,6 +104,7 @@ export function ProductCard({
               key={imgIndex}
               src={product.images[imgIndex]}
               alt={product.name}
+              loading="lazy"
               decoding="async"
               className={[
                 'absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-soft group-hover:scale-[1.03]',

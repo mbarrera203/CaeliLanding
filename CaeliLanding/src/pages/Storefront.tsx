@@ -1,7 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { LockIcon } from 'lucide-react';
 import { StoreHeader } from '../components/storefront/StoreHeader';
 import { BenefitsBar } from '../components/storefront/BenefitsBar';
 import { CategoryFilter } from '../components/storefront/CategoryFilter';
@@ -95,32 +93,32 @@ export function Storefront({ actionStyle }: StorefrontProps) {
           const liveProducts: Product[] = data
             .filter((row: any) => Number(row.price) > 0)
             .map((row: any) => {
-            const { onSale, originalPrice, discountPercentage, cleanDescription } = parseSaleInfo(row.description, Number(row.price));
-            const rawProduct: Product = {
-              id: String(row.id),
-              name: row.name || 'Sin nombre',
-              legacyCategory: row.category,
-              price: Number(row.price),
-              originalPrice,
-              discountPercentage,
-              onSale,
-              detail: row.detail || '',
-              description: cleanDescription,
-              images: Array.isArray(row.images) && row.images.length > 0 ? row.images : ['/LogoCaeli-removebg-preview.png'],
-              stock: Number(row.stock),
-              active: Boolean(row.active),
-              featured: Boolean(row.featured),
-              material: row.material,
-              subcategory: row.subcategory,
-              createdAt: row.created_at,
-            };
-            const classification = getProductClassification(rawProduct);
-            return {
-              ...rawProduct,
-              material: classification.material,
-              subcategory: classification.subcategory,
-            };
-          });
+              const { onSale, originalPrice, discountPercentage, cleanDescription } = parseSaleInfo(row.description, Number(row.price));
+              const rawProduct: Product = {
+                id: String(row.id),
+                name: row.name || 'Sin nombre',
+                legacyCategory: row.category,
+                price: Number(row.price),
+                originalPrice,
+                discountPercentage,
+                onSale,
+                detail: row.detail || '',
+                description: cleanDescription,
+                images: Array.isArray(row.images) && row.images.length > 0 ? row.images : ['/LogoCaeli-removebg-preview.png'],
+                stock: Number(row.stock),
+                active: Boolean(row.active),
+                featured: Boolean(row.featured),
+                material: row.material,
+                subcategory: row.subcategory,
+                createdAt: row.created_at,
+              };
+              const classification = getProductClassification(rawProduct);
+              return {
+                ...rawProduct,
+                material: classification.material,
+                subcategory: classification.subcategory,
+              };
+            });
           setCatalog(liveProducts);
         }
       } catch (err) {
@@ -208,7 +206,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
     return [...filtered].sort((a, b) => {
       const aAvailable = a.active && a.stock > 0 ? 1 : 0;
       const bAvailable = b.active && b.stock > 0 ? 1 : 0;
-      
+
       // Regla general: siempre priorizar disponibilidad independientemente del sort
       if (bAvailable !== aAvailable) {
         return bAvailable - aAvailable;
@@ -457,7 +455,7 @@ export function Storefront({ actionStyle }: StorefrontProps) {
       <WhatsAppBubble />
       <FloatingCartButton />
       <CartDrawer />
-      
+
       <AnimatePresence>
         {sharedProductId && catalog.find(p => p.id === sharedProductId || createSlug(p.name) === sharedProductId) && (
           <ProductDetailModal

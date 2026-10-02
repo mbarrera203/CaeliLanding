@@ -157,7 +157,7 @@ export function AccessoriesCarousel({ products = [] }: AccessoriesCarouselProps)
               {/* Info */}
               <div className="flex flex-col justify-end gap-3 bg-ivory/97 px-7 py-8 sm:w-[38%] sm:justify-center sm:py-12">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold">
-                  {product.category}
+                  {product.legacyCategory || product.subcategory || product.material}
                 </span>
 
                 <h3 className="font-serif text-2xl font-medium leading-tight text-ink sm:text-3xl">
@@ -199,6 +199,7 @@ export function AccessoriesCarousel({ products = [] }: AccessoriesCarouselProps)
                 <img
                   src={product.images[0] || '/LogoCaeli-removebg-preview.png'}
                   alt={product.name}
+                  loading="lazy"
                   onError={(e) => {
                     e.currentTarget.src = '/LogoCaeli-removebg-preview.png';
                   }}
