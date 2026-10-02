@@ -85,29 +85,31 @@ async function compressImage(file: File, maxWidth = 800, maxHeight = 800, qualit
   });
 }
 
-// Subir una imagen a Supabase Storage bucket 'products'
-async function uploadFileToSupabase(file: File): Promise<string> {
+// Subir una imagen a Cloudinary
+async function uploadFileToCloudinary(file: File): Promise<string> {
+  const CLOUD_NAME = 'kk4122by';
+  const UPLOAD_PRESET = 'caeli_preset';
+
   try {
     const compressedFile = await compressImage(file);
-    const fileExt = compressedFile.name.split('.').pop() || 'webp';
-    const cleanName = compressedFile.name.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 20);
-    const fileName = `${Date.now()}_${cleanName}.${fileExt}`;
-    const filePath = `items/${fileName}`;
+    
+    const formData = new FormData();
+    formData.append('file', compressedFile);
+    formData.append('upload_preset', UPLOAD_PRESET);
 
-    const { error: uploadError } = await supabase.storage
-      .from('products')
-      .upload(filePath, compressedFile, {
-        cacheControl: '3600',
-        upsert: false,
-      });
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+      method: 'POST',
+      body: formData,
+    });
 
-    if (uploadError) {
-      console.warn('No se pudo subir la foto a Supabase Storage, usando vista previa local:', uploadError);
+    if (!response.ok) {
+      const err = await response.json();
+      console.warn('No se pudo subir la foto a Cloudinary:', err);
       return URL.createObjectURL(compressedFile);
     }
 
-    const { data } = supabase.storage.from('products').getPublicUrl(filePath);
-    return data.publicUrl;
+    const data = await response.json();
+    return data.secure_url;
   } catch (err) {
     console.error('Error al subir imagen:', err);
     return URL.createObjectURL(file);
@@ -406,7 +408,7 @@ export function useInventory() {
       setIsUploading(true);
       try {
         const uploadedUrls = await Promise.all(
-          imageFiles.map((f) => uploadFileToSupabase(f))
+          imageFiles.map((f) => uploadFileToCloudinary(f))
         );
 
         const current = items.find((item) => item.id === id);
@@ -445,7 +447,7 @@ export function useInventory() {
       try {
         // Subir todas las imágenes a Supabase Storage
         const uploadedUrls = await Promise.all(
-          imageFiles.map((file) => uploadFileToSupabase(file))
+          imageFiles.map((file) => uploadFileToCloudinary(file))
         );
 
         const newId = `prod-${Date.now()}`;
@@ -504,7 +506,7 @@ export function useInventory() {
 
         if (data.files.length > 0) {
           uploadedUrls = await Promise.all(
-            data.files.map((file) => uploadFileToSupabase(file))
+            data.files.map((file) => uploadFileToCloudinary(file))
           );
         }
 

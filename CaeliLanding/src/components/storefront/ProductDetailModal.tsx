@@ -101,7 +101,6 @@ export function ProductDetailModal({ product, onClose }: ProductDetailModalProps
               transition={{ duration: 0.3 }}
               className="absolute inset-0 w-full h-full object-cover"
               alt={product.name}
-              loading="lazy"
             />
           </AnimatePresence>
 

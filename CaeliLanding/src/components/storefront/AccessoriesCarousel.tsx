@@ -199,7 +199,6 @@ export function AccessoriesCarousel({ products = [] }: AccessoriesCarouselProps)
                 <img
                   src={product.images[0] || '/LogoCaeli-removebg-preview.png'}
                   alt={product.name}
-                  loading="lazy"
                   onError={(e) => {
                     e.currentTarget.src = '/LogoCaeli-removebg-preview.png';
                   }}
