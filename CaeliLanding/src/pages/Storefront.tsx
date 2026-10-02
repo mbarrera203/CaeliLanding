@@ -120,6 +120,37 @@ export function Storefront({ actionStyle }: StorefrontProps) {
               };
             });
           setCatalog(liveProducts);
+
+          // Pre-cargar las primeras imágenes para que no se vean tarjetas vacías al entrar
+          let filtered = liveProducts;
+          if (onlyOffers) filtered = filtered.filter((p) => p.onSale);
+          if (selectedMaterial !== 'Todos') {
+            const normTargetMat = selectedMaterial.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            filtered = filtered.filter((p) => {
+              const normItemMat = p.material?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') || '';
+              return normItemMat === normTargetMat;
+            });
+          }
+
+          const topVisible = [...filtered].sort((a, b) => {
+            const aAvailable = a.active && a.stock > 0 ? 1 : 0;
+            const bAvailable = b.active && b.stock > 0 ? 1 : 0;
+            if (bAvailable !== aAvailable) return bAvailable - aAvailable;
+            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+          }).slice(0, 10);
+
+          const imagesToPreload = topVisible.map(p => p.images[0]).filter(Boolean);
+          
+          await Promise.all(
+            imagesToPreload.map(url => {
+              return new Promise((resolve) => {
+                const img = new Image();
+                img.src = url;
+                img.onload = resolve;
+                img.onerror = resolve;
+              });
+            })
+          );
         }
       } catch (err) {
         console.warn('Error cargando catálogo desde Supabase:', err);
